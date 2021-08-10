@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zihan987.github.io</id>
     <title>阿chai带你学AI</title>
-    <updated>2021-08-10T12:16:02.275Z</updated>
+    <updated>2021-08-10T12:24:02.785Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://zihan987.github.io"/>
     <link rel="self" href="https://zihan987.github.io/atom.xml"/>
@@ -11,7 +11,7 @@
     <icon>https://zihan987.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 阿chai带你学AI</rights>
     <entry>
-        <title type="html"><![CDATA[VIM3上部署]]></title>
+        <title type="html"><![CDATA[Khadas VIM3(Amlogic A311D)上进行Tengine模型推理]]></title>
         <id>https://zihan987.github.io/post/vim3-shang-bu-shu/</id>
         <link href="https://zihan987.github.io/post/vim3-shang-bu-shu/">
         </link>
