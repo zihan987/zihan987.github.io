@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>Tengine入门教程 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628599986967">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Tengine-Lite框架是OpenAILAB公司出的适用于边缘设备面向芯片SoC优化的一款推理框架，主要甚至可以让人工智能模型在stm32这样的低功耗的单片机上运行，是由最早的Tengine框架衍生过来的。
+
+http://www.op..." />
+    <meta name="keywords" content="算法侧端部署" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628599986967" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">Tengine入门教程</h2>
+            <div class="post-date">2021-08-10</div>
+            
+              <div class="feature-container" style="background-image: url('https://img2.baidu.com/it/u=2565443281,2982762230&amp;fm=11&amp;fmt=auto&amp;gp=0.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>Tengine-Lite框架是OpenAILAB公司出的适用于边缘设备面向芯片SoC优化的一款推理框架，主要甚至可以让人工智能模型在stm32这样的低功耗的单片机上运行，是由最早的Tengine框架衍生过来的。</p>
+<!-- more -->
+<pre><code>http://www.openailab.com/int/ability/list2.html
+</code></pre>
+<p>大多数学习过人工智能或者自己炼丹过的工程师，在模型出炉之后都会担心两个问题：</p>
+<ol>
+<li>我做的模型需要起码1080ti才能运行，这实际落地怎么办？</li>
+<li>炼丹用的python，这效率感人呀，但是C炼丹不会。</li>
+</ol>
+<p>Tengine-lite正好解决这两个问题，我们先看一下官网上的Tengine的系统架构，不管是模型优化以及各种加速单元的支持。</p>
+<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuIxraXd4IRiaGAGrGqZribAnTknFic2lV3RMLcNXL3kQmSWpe6fZ2pgeFHw/640?wx_fmt=jpeg" alt="img" loading="lazy"></figure>
+<h3 id="opencv的编译">opencv的编译</h3>
+<p>在安装Tengine框架前最好是编译一下OpenCV，有的demo是需要opencv的。具体OpenCV的介绍就不用多说了，宇宙第一计算机视觉算法库，我们先编译一下OpenCV。</p>
+<ol>
+<li>相关依赖的安装</li>
+</ol>
+<pre><code>sudo apt updatesudo apt-get gcc cmake gitsudo apt-get install build-essential libgtk2.0-dev libavcodec-dev libavformat-dev libjpeg.dev libtiff4.dev libswscale-devsudo libjasper-dev
+</code></pre>
+<p>2.下载源码并解压</p>
+<pre><code>wget https://github.com/opencv/opencv/archive/4.1.0.zipunzip 4.1.0.zip
+</code></pre>
+<p>3.编译opencv</p>
+<pre><code>cd opencv-4.1.0mkdir build &amp;&amp; cd buildcmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..make -j4sudo make install
+</code></pre>
+<p>4.环境变量以及pkgconfig设置(一定要sudo，要不会没有权限)：</p>
+<pre><code>sudo nano /etc/ld.so.conf.d/opencv.conf
+</code></pre>
+<p>打开后是个空白的文件，在文件的例输入如下指令并使用快捷键保存，nano的快捷键在terminal下面有提示。</p>
+<pre><code>/usr/local/lib
+</code></pre>
+<p>应用刚才配置后的设置：</p>
+<pre><code>sudo ldconfig
+</code></pre>
+<p>​     配置bash文件(一定要sudo，要不会没有权限)：</p>
+<pre><code>sudo nano /etc/bash.bashrc
+</code></pre>
+<p>输入如下指令并保存(pkgconfig的路径需要自己找一下可以用whereis pkgconfig来查询)：</p>
+<pre><code>PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig export PKG_CONFIG_PATH
+</code></pre>
+<p>应用配置并更新：</p>
+<pre><code>source /etc/bash.bashrcsudo updatedb
+</code></pre>
+<p>在完成后很多小伙伴可能出现使用pkg-config opencv <em>--modversion</em>时超不到opencv.pc文件的问题，主要原因有两个：</p>
+<ol>
+<li>刚才安装的是opencv4。</li>
+<li>opencv4.pc文件可能没有拷贝到pkg文件中。</li>
+</ol>
+<p>针对上述问题，我们可以使用如下步=步骤进行修改：</p>
+<pre><code>pkg-config opencv4 --modversionlocate opencv4.pcsudo cp -f 你的opencv4.pc的path /usr/lib/pkgconfig/
+</code></pre>
+<h3 id="tengine-lite的编译">Tengine-Lite的编译</h3>
+<p>在测试opencv没问题后我们进行tengine-lite的编译与安装，tengine-lite的编译安装是相对opencv容易一些。</p>
+<ol>
+<li>下载源码(一定要使用如下指令下载，因为lite暂时是分支)：</li>
+</ol>
+<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+</code></pre>
+<p>2.编译tengine-lite：</p>
+<pre><code>cd Tengine-Litemkdir build cd buildcmake ..make -j4sudo make install
+</code></pre>
+<h3 id="benchmark">BenchMark</h3>
+<p>我们首先测试一下Benchmark，Benchmark是测试硬件运行神经网络的最好测试方法。我们首先确认/Tengine-Lite/benchmark/models路径中是否有benchmark的模型文件，如果存在，我们运行如下命令(mobilenet为例)：</p>
+<pre><code>./comvert_tm_tool -f caffe -p mobilenet_v1.prototxt -m mobilenet_v1.caffemodel -o mobilenet_v1_benchmark.tmfile
+</code></pre>
+<p>指令参数：</p>
+<pre><code>[Usage]:  [-h] [-r repeat_count] [-t thread_count] [-p cpu affinity, 0:auto, 1:big, 2:middle, 3:little] [-s net]
+</code></pre>
+<h3 id="retinaface测试">RetinaFace测试</h3>
+<p>接下来我们测试一下Retinaface的效果，我们首先需要准备好测试的图片和模型文件，整个tengine的模型文件在如下链接中，根据需求下载：</p>
+<pre><code>链接: https://pan.baidu.com/s/1YO9frM2TU4v9wWQ_0NGMTg  密码: 8d47
+</code></pre>
+<p>根据自己的结构目录输入测试指令：</p>
+<pre><code>./tm_retinaface -m 你的models_path/retinaface.tmfile -i 你的images_path/test4.jpg -r 1 -t 1
+</code></pre>
+<p>terminal出现时间以及box等信息：</p>
+<figure data-type="image" tabindex="2"><img src="https://mmbiz.qpic.cn/mmbiz_png/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuIWeFHNtTAQzFjnILqp1dfngrPH0CI4XJEaEz40qXn3I9b6o2Q435MxA/640?wx_fmt=png" alt="img" loading="lazy"></figure>
+<p>运行的结果如默认保存在build/examples文件中，可以根据自己的需求修改程序，结果下所示：</p>
+<figure data-type="image" tabindex="3"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuI0I8Vjp4tBFfFeNkUOeWghze6D7y97KllOKIpgp8hg5YwqdPEdX5vIA/640?wx_fmt=jpeg" alt="img" loading="lazy"></figure>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://zihan987.github.io/tag/SH-93dAGg/" class="tag">
+                    算法侧端部署
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/tengine-zhi-chi-paddlepaddle20-la/">
+                  <h3 class="post-title">
+                    Tengine支持PaddlePaddle2.0啦
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

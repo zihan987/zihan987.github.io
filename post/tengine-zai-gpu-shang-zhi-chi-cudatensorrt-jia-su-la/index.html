@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>Tengine在GPU上支持CUDA/TensorRT加速啦 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628599986967">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Tengine框架在最近\支持了GPU上通过CUDA或TensorRT加速，那么今天阿chai就带着大家看看我们如何在NVIDIA的嵌入式设备中使用Tengine框架。今天的算法完全在嵌入式上进行，请小伙伴们自行学习有关LInux下开发的相..." />
+    <meta name="keywords" content="算法侧端部署" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628599986967" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">Tengine在GPU上支持CUDA/TensorRT加速啦</h2>
+            <div class="post-date">2021-08-10</div>
+            
+              <div class="feature-container" style="background-image: url('https://img1.baidu.com/it/u=378651486,2631330454&amp;fm=253&amp;fmt=auto&amp;app=120&amp;f=PNG?w=641&amp;h=396')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>Tengine框架在最近\支持了GPU上通过CUDA或TensorRT加速，那么今天阿chai就带着大家看看我们如何在NVIDIA的嵌入式设备中使用Tengine框架。今天的算法完全在嵌入式上进行，请小伙伴们自行学习有关LInux下开发的相关知识。</p>
+<!-- more -->
+<h2 id="tengine-cuda">Tengine CUDA</h2>
+<table>
+<thead>
+<tr>
+<th>硬件平台</th>
+<th>Jetson Nano</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA</td>
+<td>10.0</td>
+</tr>
+<tr>
+<td>TensorRT</td>
+<td>5.0</td>
+</tr>
+<tr>
+<td>cuDNN</td>
+<td>7.0</td>
+</tr>
+</tbody>
+</table>
+<p>如果是在不知道自己的版本，可以输入如下命令：</p>
+<pre><code># XXXX为查询的内容
+dpkg -l | grep xxxx
+</code></pre>
+<p>首先安装相关依赖：</p>
+<pre><code>sudo apt-get install cmake make g++ git
+</code></pre>
+<p>clone新的Tengien Lite Demo：</p>
+<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+</code></pre>
+<p>设置NVCC的环境变量，NVCC的位置一般情况下在这：</p>
+<pre><code>export CUDACXX=/usr/local/cuda/bin/nvcc
+</code></pre>
+<p>建立编译文件夹并进入：</p>
+<pre><code>mkdir -p build-linux-cuda
+
+cd build-linux-cuda
+</code></pre>
+<p>cmake参数的文件路径一定要设置成自己的，如果不知道在哪里，可以根据下方的路径进行寻找。</p>
+<pre><code>cmake -DTENGINE_ENABLE_CUDABACKEND=ON \ -DCUDA_INCLUDE_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/include \ -DCUDA_LIBARAY_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/lib ..
+</code></pre>
+<p>编译：</p>
+<pre><code>make -j4
+
+make install
+</code></pre>
+<p>测试用的程序文件在如下路径中，为tm_classification_cuda</p>
+<pre><code>Tengine-Lite/build-linux-cuda/examples/
+</code></pre>
+<p>测试以MobileNet V1为例，测试的图片与模型可在如下链接中下载：</p>
+<pre><code>链接: https://pan.baidu.com/s/1Izm0RlLJvwTIkhfQ_NXg5Q  
+密码: faan
+</code></pre>
+<p>将模型预测师图片下载好导入嵌入式设备中并记住路径，输入如下命令进行测试，模型与图片的路径以自己设置的为准。</p>
+<pre><code>./tm_classification_cuda -m mobilenet_v1.tmfile -i dog.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>我们可以看到如下结果：</p>
+<pre><code>Tengine plugin allocator CUDA is registered.
+tengine-lite library version: 1.2-dev
+
+model file : mobilenet_v1.tmfile
+image file : dog.jpg
+img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
+Repeat 10 times, thread 1, avg time 35.95 ms, max_time 100.85 ms, min_time 19.96 ms
+--------------------------------------
+22.900383, 537
+20.012611, 248
+18.909063, 249
+18.323162, 250
+14.298100, 174
+--------------------------------------
+</code></pre>
+<p>同样我们可以输入如下命令测试纯CPU的推理速度：</p>
+<pre><code>./tm_classification -m mobilenet_v1.tmfile -i dog.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>CPU的推理速度是远远慢于CUDA加速的GPU推理。</p>
+<h2 id="tengine-tensorrt">Tengine TensorRT</h2>
+<table>
+<thead>
+<tr>
+<th>硬件平台</th>
+<th><strong>Jetson AGX Xa****vier</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA</td>
+<td>10.2</td>
+</tr>
+<tr>
+<td>TensorRT</td>
+<td>7.2</td>
+</tr>
+<tr>
+<td>cuDNN</td>
+<td>7.6</td>
+</tr>
+</tbody>
+</table>
+<p>如果是在不知道自己的版本，可以输入如下命令：</p>
+<pre><code># XXXX为查询的内容
+dpkg -l | grep xxxx
+</code></pre>
+<p>首先安装相关依赖：</p>
+<pre><code>sudo apt-get install cmake make g++ git
+</code></pre>
+<p>clone新的Tengien Lite Demo：</p>
+<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+</code></pre>
+<p>设置NVCC的环境变量，NVCC的位置一般情况下在这：</p>
+<pre><code>export CUDACXX=/usr/local/cuda/bin/nvcc
+</code></pre>
+<p>建立编译文件夹并进入：</p>
+<pre><code>mkdir -p build-linux-trt
+
+cd build-linux-trt
+</code></pre>
+<p>cmake参数的比CUDA的要多一些，千万不要弄错。如果不知道在哪里，可以根据下方的路径进行寻找。</p>
+<pre><code>cmake -DTENGINE_ENABLE_TENSORRT=ON \ -DTENSORRT_INCLUDE_DIR=/usr/include/aarch64-linux-gnu \ -DTENSORRT_LIBRARY_DIR=/usr/lib/aarch64-linux-gnu \ -DCUDA_INCLUDE_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/include \ -DCUDA_LIBARAY_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/lib ..
+</code></pre>
+<p>编译：</p>
+<pre><code>make -j4
+
+make install
+</code></pre>
+<p>测试用的程序文件在如下路径中，为tm_classification_trt</p>
+<pre><code>Tengine-Lite/build-linux-cuda/examples/
+</code></pre>
+<p>测试以MobileNet V1为例，测试的模型可在如下链接中下载：</p>
+<pre><code>链接: https://pan.baidu.com/s/1Izm0RlLJvwTIkhfQ_NXg5Q  
+密码: faan
+</code></pre>
+<p>将模型预测师图片下载好导入嵌入式设备中并记住路径，输入如下命令进行测试，模型与图片的路径以自己设置的为准。</p>
+<pre><code>./tm_classification_trt -m mobilenet_v1.tmfile -i cat.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>我们可以看到如下结果：</p>
+<pre><code>Tengine plugin allocator TRT is registered.
+tengine-lite library version: 1.2-dev
+Tengine: Try using inference precision TF32 failed, rollback.
+
+model file : mobilenet_v1.tmfile
+image file : cat.jpg
+img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
+Repeat 1 times, thread 1, avg time 2.91 ms, max_time 2.91 ms, min_time 2.91 ms
+--------------------------------------
+8.574147, 282
+7.880117, 277
+7.812574, 278
+7.286457, 263
+6.357487, 281
+--------------------------------------
+</code></pre>
+<p>同样我们可以输入如下命令测试纯CPU的推理速度：</p>
+<pre><code>./tm_classification -m mobilenet_v1.tmfile -i cat.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>CPU的推理速度是远远慢于CUDA加速的GPU推理。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://zihan987.github.io/tag/SH-93dAGg/" class="tag">
+                    算法侧端部署
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/tengine-ru-men-jiao-cheng/">
+                  <h3 class="post-title">
+                    Tengine入门教程
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

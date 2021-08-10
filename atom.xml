@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zihan987.github.io</id>
     <title>阿chai带你学AI</title>
-    <updated>2021-08-10T12:24:02.785Z</updated>
+    <updated>2021-08-10T12:53:37.080Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://zihan987.github.io"/>
     <link rel="self" href="https://zihan987.github.io/atom.xml"/>
@@ -10,6 +10,773 @@
     <logo>https://zihan987.github.io/images/avatar.png</logo>
     <icon>https://zihan987.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 阿chai带你学AI</rights>
+    <entry>
+        <title type="html"><![CDATA[VSLAM中剔除动态目标的视觉里程计]]></title>
+        <id>https://zihan987.github.io/post/vslam-zhong-ti-chu-dong-tai-mu-biao-de-shi-jue-li-cheng-ji/</id>
+        <link href="https://zihan987.github.io/post/vslam-zhong-ti-chu-dong-tai-mu-biao-de-shi-jue-li-cheng-ji/">
+        </link>
+        <updated>2021-08-10T12:48:06.000Z</updated>
+        <summary type="html"><![CDATA[<p>地图构建是SLAM系统中非常重要的部分，一个信息完善的地图对于后续导航相当重要。运动场景中除了静态的元素外也会出现一些例如行人、其他机器人等动态元素，对于导航而言，需要避开但是我们不希望出现在地图模型中，会让机器人认为障碍物的“真实面貌”就是这样，因此我们需要筛选元素，存储到语义图谱中。今天阿chai给大家介绍一种SLAM中动态元素筛选的方法。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>地图构建是SLAM系统中非常重要的部分，一个信息完善的地图对于后续导航相当重要。运动场景中除了静态的元素外也会出现一些例如行人、其他机器人等动态元素，对于导航而言，需要避开但是我们不希望出现在地图模型中，会让机器人认为障碍物的“真实面貌”就是这样，因此我们需要筛选元素，存储到语义图谱中。今天阿chai给大家介绍一种SLAM中动态元素筛选的方法。</p>
+<!-- more -->
+<h3 id="1-main">1. Main</h3>
+<p>以下是动态目标筛选的算法流程。</p>
+<figure data-type="image" tabindex="1"><img src="https://zihan987.github.io/post-images/1628599760313.png" alt="" loading="lazy"></figure>
+<p>接下来我们详细的讲解一下。</p>
+<h3 id="2-yolox的动态目标筛选">2. YOLOX的动态目标筛选</h3>
+<p>YOLOX是旷视研究院开源的目标检测算法，赢得了Streaming Perception的第一名。算法是YOLO系列的改进，Anchor- Free，decoupled head、NMS-free以及SimOTA是算法的亮点， COCO 上实现了 50.0% AP，并且提供了ONNX模型，支持TensorRT、NCNN 和 Openvino 的侧端推理部署的版本。</p>
+<figure data-type="image" tabindex="2"><img src="https://zihan987.github.io/post-images/1628599777231.jpg" alt="" loading="lazy"></figure>
+<ul>
+<li>论文：https://arxiv.org/abs/2107.08430</li>
+<li>官方demo：https://github.com/Megvii-BaseDetection/YOLOX</li>
+<li>Tengine版：https://github.com/OAID/Tengine/blob/tengine-lite/examples/tm_yolox.cpp</li>
+</ul>
+<p>TFLite、MNN版本的example以及ios上的测试APP私聊阿chai，嘿嘿。</p>
+<p>基于YOLOX的动态目标筛选是通过YOLOX检测到可能存在运动的元素，这些元素是优先设置到物体库中，例如人、其他机器人、手推车等。</p>
+<h3 id="3-光流法动态特征点筛选">3. 光流法动态特征点筛选</h3>
+<h4 id="31-lucas-kanade">3.1 Lucas-Kanade</h4>
+<p><img src="https://zihan987.github.io/post-images/1628599832250.png" alt="" loading="lazy"><br>
+Lucas–Kanade光流算法是两帧差分的光流估计算法，基于三个假设：</p>
+<ul>
+<li>灰度不变性：像素的灰度值不会随着帧的跟踪改变。</li>
+<li>时间持续性：时间的变化不会引起像素位置的剧烈变化。</li>
+<li>空间一致性：场景中相同表面的相邻点具有相似的运动，并且其投影到图像平面上的距离也比较近。</li>
+</ul>
+<p>论文：http://cseweb.ucsd.edu/classes/sp02/cse252/lucaskanade81.pdf</p>
+<p>首先根据前两个光流的基本假设能得到图像的约束方程，然后进行泰勒展开，联立得到方程组。由于两个未知量所以无法求解，于是根据第三个基本假设设立新的方程带入，同时根据最小二乘策略处理方程组，求的速度矢量。</p>
+<p>这里不做有关光流法的详细公式推导，有兴趣的小伙伴可以去阅读paper。</p>
+<h4 id="32-运动一致性">3.2 运动一致性</h4>
+<p>通过光流法获取匹配的特征点对，并跟据匹配的特征点对计算基础矩阵。然后通过基础矩阵和特征点计算特征点对应的极线，当特征点到极线的距离大于一定值，即判断为动态特征点。</p>
+<p>一组匹配的特征点对<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">m_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>、<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">m_{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的齐次坐标为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo fence="true">{</mo><mtable><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><msub><mi>m</mi><mn>1</mn></msub><mo>=</mo><mrow><mo fence="true">[</mo><msub><mi>u</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>v</mi><mn>1</mn></msub><mo separator="true">,</mo><mn>1</mn><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><msub><mi>m</mi><mn>2</mn></msub><mo>=</mo><mrow><mo fence="true">[</mo><msub><mi>u</mi><mn>2</mn></msub><mo separator="true">,</mo><msub><mi>v</mi><mn>2</mn></msub><mo separator="true">,</mo><mn>1</mn><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr></mtable></mrow><annotation encoding="application/x-tex">\left\{\begin{array}{l}
+m_{1}=\left[u_{1}, v_{1}, 1\right] \\
+m_{2}=\left[u_{2}, v_{2}, 1\right]
+\end{array}\right.
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.40003em;vertical-align:-0.95003em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">{</span></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">[</span><span class="mord"><span class="mord mathdefault">u</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">1</span><span class="mclose delimcenter" style="top:0em;">]</span></span></span></span><span style="top:-2.4099999999999997em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">[</span><span class="mord"><span class="mord mathdefault">u</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">1</span><span class="mclose delimcenter" style="top:0em;">]</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9500000000000004em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>u</mi></mrow><annotation encoding="application/x-tex">u</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">u</span></span></span></span>、<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">v</span></span></span></span>是像素的横纵坐标。对于<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">m_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>，极线<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub><mo>=</mo><mrow><mo fence="true">[</mo><mtable><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi>X</mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi>Y</mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi>Z</mi></mstyle></mtd></mtr></mtable><mo fence="true">]</mo></mrow><mo>=</mo><mi>H</mi><msub><mi>m</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}=\left[\begin{array}{c}
+X \\
+Y \\
+Z
+\end{array}\right]=H m_{1}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.60004em;vertical-align:-1.55002em;"></span><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎣</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎡</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05em;"><span style="top:-4.21em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span></span></span><span style="top:-3.0099999999999993em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span></span></span><span style="top:-1.8099999999999994em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.5500000000000007em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎦</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎤</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord mathdefault" style="margin-right:0.08125em;">H</span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<p>其中<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.08125em;">H</span></span></span></span>代表着对应的基础矩阵，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">m_{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>到极线<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的距离<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi></mrow><annotation encoding="application/x-tex">d</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span></span></span></span>为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi><mo>=</mo><mfrac><mrow><mo fence="true">∣</mo><msubsup><mi>m</mi><mn>2</mn><mi>T</mi></msubsup><mi>H</mi><msub><mi>m</mi><mn>1</mn></msub><mo fence="true">∣</mo></mrow><msqrt><mrow><mi mathvariant="normal">∥</mi><mi>X</mi><msup><mi mathvariant="normal">∥</mi><mn>2</mn></msup><mo>+</mo><mi mathvariant="normal">∥</mi><mi>Y</mi><msup><mi mathvariant="normal">∥</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow><annotation encoding="application/x-tex">d=\frac{\left|m_{2}^{T} H m_{1}\right|}{\sqrt{\|X\|^{2}+\|Y\|^{2}}}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.7319999999999998em;vertical-align:-1.13em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.6019999999999999em;"><span style="top:-2.175em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.935em;"><span class="svg-align" style="top:-3.2em;"><span class="pstrut" style="height:3.2em;"></span><span class="mord" style="padding-left:1em;"><span class="mord">∥</span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mord"><span class="mord">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.740108em;"><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord">∥</span><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span><span class="mord"><span class="mord">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.740108em;"><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><span style="top:-2.8950000000000005em;"><span class="pstrut" style="height:3.2em;"></span><span class="hide-tail" style="min-width:1.02em;height:1.28em;"><svg width='400em' height='1.28em' viewBox='0 0 400000 1296' preserveAspectRatio='xMinYMin slice'><path d='M263,681c0.7,0,18,39.7,52,119c34,79.3,68.167,
+158.7,102.5,238c34.3,79.3,51.8,119.3,52.5,120c340,-704.7,510.7,-1060.3,512,-1067
+c4.7,-7.3,11,-11,19,-11H40000v40H1012.3s-271.3,567,-271.3,567c-38.7,80.7,-84,
+175,-136,283c-52,108,-89.167,185.3,-111.5,232c-22.3,46.7,-33.8,70.3,-34.5,71
+c-4.7,4.7,-12.3,7,-23,7s-12,-1,-12,-1s-109,-253,-109,-253c-72.7,-168,-109.3,
+-252,-110,-252c-10.7,8,-22,16.7,-34,26c-22,17.3,-33.3,26,-34,26s-26,-26,-26,-26
+s76,-59,76,-59s76,-60,76,-60z M1001 80H40000v40H1012z'/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.30499999999999994em;"><span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.74001em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.86199em;"><span style="top:-2.2559899999999997em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span><span style="top:-2.86199em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35000999999999993em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8413309999999999em;"><span style="top:-2.4518920000000004em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.24810799999999997em;"><span></span></span></span></span></span></span><span class="mord mathdefault" style="margin-right:0.08125em;">H</span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.86199em;"><span style="top:-2.2559899999999997em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span><span style="top:-2.86199em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35000999999999993em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.13em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>当距离大于一定值时<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">m_{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>为动态点。</p>
+<h3 id="4-误差分析">4. 误差分析</h3>
+<p>视觉里程计的评价标准需要看绝对误差与相对误差。为做误差分析，使用TUM数据集中无运动以及有运动的序列作为分析数据。<br>
+绝对轨迹误差：<br>
+<img src="https://zihan987.github.io/post-images/1628599903738.png" alt="" loading="lazy"><br>
+旋转相对误差：<br>
+<img src="https://zihan987.github.io/post-images/1628599910318.png" alt="" loading="lazy"><br>
+平移相对误差：<br>
+<img src="https://zihan987.github.io/post-images/1628599916542.png" alt="" loading="lazy"><br>
+经过测试，在运动目标的序列中动态目标的筛选会降低误差，在静态环境中效果几乎等同于ORB-SLAM。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Tengine在GPU上支持CUDA/TensorRT加速啦]]></title>
+        <id>https://zihan987.github.io/post/tengine-zai-gpu-shang-zhi-chi-cudatensorrt-jia-su-la/</id>
+        <link href="https://zihan987.github.io/post/tengine-zai-gpu-shang-zhi-chi-cudatensorrt-jia-su-la/">
+        </link>
+        <updated>2021-08-10T12:42:59.000Z</updated>
+        <summary type="html"><![CDATA[<p>Tengine框架在最近\支持了GPU上通过CUDA或TensorRT加速，那么今天阿chai就带着大家看看我们如何在NVIDIA的嵌入式设备中使用Tengine框架。今天的算法完全在嵌入式上进行，请小伙伴们自行学习有关LInux下开发的相关知识。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Tengine框架在最近\支持了GPU上通过CUDA或TensorRT加速，那么今天阿chai就带着大家看看我们如何在NVIDIA的嵌入式设备中使用Tengine框架。今天的算法完全在嵌入式上进行，请小伙伴们自行学习有关LInux下开发的相关知识。</p>
+<!-- more -->
+<h2 id="tengine-cuda">Tengine CUDA</h2>
+<table>
+<thead>
+<tr>
+<th>硬件平台</th>
+<th>Jetson Nano</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA</td>
+<td>10.0</td>
+</tr>
+<tr>
+<td>TensorRT</td>
+<td>5.0</td>
+</tr>
+<tr>
+<td>cuDNN</td>
+<td>7.0</td>
+</tr>
+</tbody>
+</table>
+<p>如果是在不知道自己的版本，可以输入如下命令：</p>
+<pre><code># XXXX为查询的内容
+dpkg -l | grep xxxx
+</code></pre>
+<p>首先安装相关依赖：</p>
+<pre><code>sudo apt-get install cmake make g++ git
+</code></pre>
+<p>clone新的Tengien Lite Demo：</p>
+<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+</code></pre>
+<p>设置NVCC的环境变量，NVCC的位置一般情况下在这：</p>
+<pre><code>export CUDACXX=/usr/local/cuda/bin/nvcc
+</code></pre>
+<p>建立编译文件夹并进入：</p>
+<pre><code>mkdir -p build-linux-cuda
+
+cd build-linux-cuda
+</code></pre>
+<p>cmake参数的文件路径一定要设置成自己的，如果不知道在哪里，可以根据下方的路径进行寻找。</p>
+<pre><code>cmake -DTENGINE_ENABLE_CUDABACKEND=ON \ -DCUDA_INCLUDE_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/include \ -DCUDA_LIBARAY_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/lib ..
+</code></pre>
+<p>编译：</p>
+<pre><code>make -j4
+
+make install
+</code></pre>
+<p>测试用的程序文件在如下路径中，为tm_classification_cuda</p>
+<pre><code>Tengine-Lite/build-linux-cuda/examples/
+</code></pre>
+<p>测试以MobileNet V1为例，测试的图片与模型可在如下链接中下载：</p>
+<pre><code>链接: https://pan.baidu.com/s/1Izm0RlLJvwTIkhfQ_NXg5Q  
+密码: faan
+</code></pre>
+<p>将模型预测师图片下载好导入嵌入式设备中并记住路径，输入如下命令进行测试，模型与图片的路径以自己设置的为准。</p>
+<pre><code>./tm_classification_cuda -m mobilenet_v1.tmfile -i dog.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>我们可以看到如下结果：</p>
+<pre><code>Tengine plugin allocator CUDA is registered.
+tengine-lite library version: 1.2-dev
+
+model file : mobilenet_v1.tmfile
+image file : dog.jpg
+img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
+Repeat 10 times, thread 1, avg time 35.95 ms, max_time 100.85 ms, min_time 19.96 ms
+--------------------------------------
+22.900383, 537
+20.012611, 248
+18.909063, 249
+18.323162, 250
+14.298100, 174
+--------------------------------------
+</code></pre>
+<p>同样我们可以输入如下命令测试纯CPU的推理速度：</p>
+<pre><code>./tm_classification -m mobilenet_v1.tmfile -i dog.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>CPU的推理速度是远远慢于CUDA加速的GPU推理。</p>
+<h2 id="tengine-tensorrt">Tengine TensorRT</h2>
+<table>
+<thead>
+<tr>
+<th>硬件平台</th>
+<th><strong>Jetson AGX Xa****vier</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA</td>
+<td>10.2</td>
+</tr>
+<tr>
+<td>TensorRT</td>
+<td>7.2</td>
+</tr>
+<tr>
+<td>cuDNN</td>
+<td>7.6</td>
+</tr>
+</tbody>
+</table>
+<p>如果是在不知道自己的版本，可以输入如下命令：</p>
+<pre><code># XXXX为查询的内容
+dpkg -l | grep xxxx
+</code></pre>
+<p>首先安装相关依赖：</p>
+<pre><code>sudo apt-get install cmake make g++ git
+</code></pre>
+<p>clone新的Tengien Lite Demo：</p>
+<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+</code></pre>
+<p>设置NVCC的环境变量，NVCC的位置一般情况下在这：</p>
+<pre><code>export CUDACXX=/usr/local/cuda/bin/nvcc
+</code></pre>
+<p>建立编译文件夹并进入：</p>
+<pre><code>mkdir -p build-linux-trt
+
+cd build-linux-trt
+</code></pre>
+<p>cmake参数的比CUDA的要多一些，千万不要弄错。如果不知道在哪里，可以根据下方的路径进行寻找。</p>
+<pre><code>cmake -DTENGINE_ENABLE_TENSORRT=ON \ -DTENSORRT_INCLUDE_DIR=/usr/include/aarch64-linux-gnu \ -DTENSORRT_LIBRARY_DIR=/usr/lib/aarch64-linux-gnu \ -DCUDA_INCLUDE_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/include \ -DCUDA_LIBARAY_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/lib ..
+</code></pre>
+<p>编译：</p>
+<pre><code>make -j4
+
+make install
+</code></pre>
+<p>测试用的程序文件在如下路径中，为tm_classification_trt</p>
+<pre><code>Tengine-Lite/build-linux-cuda/examples/
+</code></pre>
+<p>测试以MobileNet V1为例，测试的模型可在如下链接中下载：</p>
+<pre><code>链接: https://pan.baidu.com/s/1Izm0RlLJvwTIkhfQ_NXg5Q  
+密码: faan
+</code></pre>
+<p>将模型预测师图片下载好导入嵌入式设备中并记住路径，输入如下命令进行测试，模型与图片的路径以自己设置的为准。</p>
+<pre><code>./tm_classification_trt -m mobilenet_v1.tmfile -i cat.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>我们可以看到如下结果：</p>
+<pre><code>Tengine plugin allocator TRT is registered.
+tengine-lite library version: 1.2-dev
+Tengine: Try using inference precision TF32 failed, rollback.
+
+model file : mobilenet_v1.tmfile
+image file : cat.jpg
+img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
+Repeat 1 times, thread 1, avg time 2.91 ms, max_time 2.91 ms, min_time 2.91 ms
+--------------------------------------
+8.574147, 282
+7.880117, 277
+7.812574, 278
+7.286457, 263
+6.357487, 281
+--------------------------------------
+</code></pre>
+<p>同样我们可以输入如下命令测试纯CPU的推理速度：</p>
+<pre><code>./tm_classification -m mobilenet_v1.tmfile -i cat.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+</code></pre>
+<p>CPU的推理速度是远远慢于CUDA加速的GPU推理。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Tengine入门教程]]></title>
+        <id>https://zihan987.github.io/post/tengine-ru-men-jiao-cheng/</id>
+        <link href="https://zihan987.github.io/post/tengine-ru-men-jiao-cheng/">
+        </link>
+        <updated>2021-08-10T12:37:33.000Z</updated>
+        <summary type="html"><![CDATA[<p>Tengine-Lite框架是OpenAILAB公司出的适用于边缘设备面向芯片SoC优化的一款推理框架，主要甚至可以让人工智能模型在stm32这样的低功耗的单片机上运行，是由最早的Tengine框架衍生过来的。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Tengine-Lite框架是OpenAILAB公司出的适用于边缘设备面向芯片SoC优化的一款推理框架，主要甚至可以让人工智能模型在stm32这样的低功耗的单片机上运行，是由最早的Tengine框架衍生过来的。</p>
+<!-- more -->
+<pre><code>http://www.openailab.com/int/ability/list2.html
+</code></pre>
+<p>大多数学习过人工智能或者自己炼丹过的工程师，在模型出炉之后都会担心两个问题：</p>
+<ol>
+<li>我做的模型需要起码1080ti才能运行，这实际落地怎么办？</li>
+<li>炼丹用的python，这效率感人呀，但是C炼丹不会。</li>
+</ol>
+<p>Tengine-lite正好解决这两个问题，我们先看一下官网上的Tengine的系统架构，不管是模型优化以及各种加速单元的支持。</p>
+<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuIxraXd4IRiaGAGrGqZribAnTknFic2lV3RMLcNXL3kQmSWpe6fZ2pgeFHw/640?wx_fmt=jpeg" alt="img" loading="lazy"></figure>
+<h3 id="opencv的编译">opencv的编译</h3>
+<p>在安装Tengine框架前最好是编译一下OpenCV，有的demo是需要opencv的。具体OpenCV的介绍就不用多说了，宇宙第一计算机视觉算法库，我们先编译一下OpenCV。</p>
+<ol>
+<li>相关依赖的安装</li>
+</ol>
+<pre><code>sudo apt updatesudo apt-get gcc cmake gitsudo apt-get install build-essential libgtk2.0-dev libavcodec-dev libavformat-dev libjpeg.dev libtiff4.dev libswscale-devsudo libjasper-dev
+</code></pre>
+<p>2.下载源码并解压</p>
+<pre><code>wget https://github.com/opencv/opencv/archive/4.1.0.zipunzip 4.1.0.zip
+</code></pre>
+<p>3.编译opencv</p>
+<pre><code>cd opencv-4.1.0mkdir build &amp;&amp; cd buildcmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..make -j4sudo make install
+</code></pre>
+<p>4.环境变量以及pkgconfig设置(一定要sudo，要不会没有权限)：</p>
+<pre><code>sudo nano /etc/ld.so.conf.d/opencv.conf
+</code></pre>
+<p>打开后是个空白的文件，在文件的例输入如下指令并使用快捷键保存，nano的快捷键在terminal下面有提示。</p>
+<pre><code>/usr/local/lib
+</code></pre>
+<p>应用刚才配置后的设置：</p>
+<pre><code>sudo ldconfig
+</code></pre>
+<p>​     配置bash文件(一定要sudo，要不会没有权限)：</p>
+<pre><code>sudo nano /etc/bash.bashrc
+</code></pre>
+<p>输入如下指令并保存(pkgconfig的路径需要自己找一下可以用whereis pkgconfig来查询)：</p>
+<pre><code>PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig export PKG_CONFIG_PATH
+</code></pre>
+<p>应用配置并更新：</p>
+<pre><code>source /etc/bash.bashrcsudo updatedb
+</code></pre>
+<p>在完成后很多小伙伴可能出现使用pkg-config opencv <em>--modversion</em>时超不到opencv.pc文件的问题，主要原因有两个：</p>
+<ol>
+<li>刚才安装的是opencv4。</li>
+<li>opencv4.pc文件可能没有拷贝到pkg文件中。</li>
+</ol>
+<p>针对上述问题，我们可以使用如下步=步骤进行修改：</p>
+<pre><code>pkg-config opencv4 --modversionlocate opencv4.pcsudo cp -f 你的opencv4.pc的path /usr/lib/pkgconfig/
+</code></pre>
+<h3 id="tengine-lite的编译">Tengine-Lite的编译</h3>
+<p>在测试opencv没问题后我们进行tengine-lite的编译与安装，tengine-lite的编译安装是相对opencv容易一些。</p>
+<ol>
+<li>下载源码(一定要使用如下指令下载，因为lite暂时是分支)：</li>
+</ol>
+<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+</code></pre>
+<p>2.编译tengine-lite：</p>
+<pre><code>cd Tengine-Litemkdir build cd buildcmake ..make -j4sudo make install
+</code></pre>
+<h3 id="benchmark">BenchMark</h3>
+<p>我们首先测试一下Benchmark，Benchmark是测试硬件运行神经网络的最好测试方法。我们首先确认/Tengine-Lite/benchmark/models路径中是否有benchmark的模型文件，如果存在，我们运行如下命令(mobilenet为例)：</p>
+<pre><code>./comvert_tm_tool -f caffe -p mobilenet_v1.prototxt -m mobilenet_v1.caffemodel -o mobilenet_v1_benchmark.tmfile
+</code></pre>
+<p>指令参数：</p>
+<pre><code>[Usage]:  [-h] [-r repeat_count] [-t thread_count] [-p cpu affinity, 0:auto, 1:big, 2:middle, 3:little] [-s net]
+</code></pre>
+<h3 id="retinaface测试">RetinaFace测试</h3>
+<p>接下来我们测试一下Retinaface的效果，我们首先需要准备好测试的图片和模型文件，整个tengine的模型文件在如下链接中，根据需求下载：</p>
+<pre><code>链接: https://pan.baidu.com/s/1YO9frM2TU4v9wWQ_0NGMTg  密码: 8d47
+</code></pre>
+<p>根据自己的结构目录输入测试指令：</p>
+<pre><code>./tm_retinaface -m 你的models_path/retinaface.tmfile -i 你的images_path/test4.jpg -r 1 -t 1
+</code></pre>
+<p>terminal出现时间以及box等信息：</p>
+<figure data-type="image" tabindex="2"><img src="https://mmbiz.qpic.cn/mmbiz_png/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuIWeFHNtTAQzFjnILqp1dfngrPH0CI4XJEaEz40qXn3I9b6o2Q435MxA/640?wx_fmt=png" alt="img" loading="lazy"></figure>
+<p>运行的结果如默认保存在build/examples文件中，可以根据自己的需求修改程序，结果下所示：</p>
+<figure data-type="image" tabindex="3"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuI0I8Vjp4tBFfFeNkUOeWghze6D7y97KllOKIpgp8hg5YwqdPEdX5vIA/640?wx_fmt=jpeg" alt="img" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Tengine支持PaddlePaddle2.0啦]]></title>
+        <id>https://zihan987.github.io/post/tengine-zhi-chi-paddlepaddle20-la/</id>
+        <link href="https://zihan987.github.io/post/tengine-zhi-chi-paddlepaddle20-la/">
+        </link>
+        <updated>2021-08-10T12:35:00.000Z</updated>
+        <summary type="html"><![CDATA[<p>Tengine是非常优秀的深度学习推理框架，之前阿chai也出过很多Tengine的教程，今天我们介绍一下如何将PaddlePaddle2.0的模型转换Tengine。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Tengine是非常优秀的深度学习推理框架，之前阿chai也出过很多Tengine的教程，今天我们介绍一下如何将PaddlePaddle2.0的模型转换Tengine。</p>
+<!-- more -->
+<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdTpRaLnyIUQia7BZMqiazHp9GiaibpmF99bo4VLquSJ1Jf0PldSecOCBJWcpYkJmiaFcp0zZQ2CVBzDtg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></figure>
+<p>如果对Tengine不了解的可以看阿柴之前写的教程：</p>
+<ul>
+<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247483767&amp;idx=1&amp;sn=d2536c4d481278bdae2af1df9190ea43&amp;chksm=e8fdbe29df8a373f25ad5a44ae29ce9b1460e3ebdfd4ca15a0223af621eef9659f2f3065d10e&amp;scene=21#wechat_redirect">面向芯片的推理框架Tengine-Lite</a></li>
+<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247486235&amp;idx=1&amp;sn=9e5818eb60ecc0ef7976ce4feeeb3799&amp;chksm=e8fdb445df8a3d5382163abaae7c15ed3f59406ed713a5437023ca234a7fb7c557d6a7867c09&amp;scene=21#wechat_redirect">Khadas VIM3上进行Tengine模型推理</a></li>
+<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247485908&amp;idx=1&amp;sn=848793deed0ceec65c679fd1963f9da0&amp;chksm=e8fdb68adf8a3f9c5794626fa43c34632f38ea9eea35e8a9de467f46fa3d64ef22fd70ff716c&amp;scene=21#wechat_redirect">Tengine在GPU上支持CUDA/TensorRT加速啦</a></li>
+<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247486258&amp;idx=1&amp;sn=5aad6a94cb057650f17df55ecf4fd72f&amp;chksm=e8fdb46cdf8a3d7a9ab7fa923bd639b5bf558e810e598518c26b953275f4f84fb29248199123&amp;scene=21#wechat_redirect">Tengine 支持 NPU 模型部署-YOLOv5s</a></li>
+</ul>
+<p>本文参考圈圈虫大佬的Tengine 支持 PaddlePaddle 模型部署。</p>
+<h3 id="动态图与计算图">动态图与计算图</h3>
+<p>百度的PadddlePaddle2.0支持了非常好用的动态图：</p>
+<p>(1)动态图: 运算和图结构搭建同时进行，主要特点为灵活、便于修改</p>
+<p>(2)静态图: 先搭建图结构，后进行运算，主要特点为效率高、不好改</p>
+<p>但是如果将深度学习模型部署的话计算图会好一些。</p>
+<p>PaddlePaddle计算图的CNN：</p>
+<pre><code>import paddle.fluid as f
+import numpy as np
+
+data = f.layers.data(name='data', shape=[3, 32, 32], dtype='float32')
+param_attr = f.ParamAttr(name='conv2d.weight', initializer=f.initializer.Xavier(uniform=False), learning_rate=0.001)
+
+res = f.layers.conv2d(input=data, num_filters=2, filter_size=3, act=&quot;relu&quot;, param_attr=param_attr)
+
+place = f.CPUPlace()
+exe = f.Executor(place)
+exe.run(f.default_startup_program())
+
+x = np.random.rand(1, 3, 32, 32).astype(&quot;float32&quot;)
+
+res_output = exe.run(feed={&quot;data&quot;: x}, fetch_list=[res])
+</code></pre>
+<p>PaddlePaddle 动态图CNN：</p>
+<pre><code>from paddle.fluid.dygraph.base import to_variable
+import paddle.fluid as f
+from paddle.fluid.dygraph import Conv2D
+import numpy as np
+
+x = np.random.rand(1, 3, 32, 32).astype(&quot;float32&quot;)
+
+with f.dygraph.guard():
+    conv2d = Conv2D(num_channels=3,
+                    num_filters=2,
+                    filter_size=3,
+                    act='relu')
+    data = to_variable(x)
+    conv = conv2d(data)
+</code></pre>
+<h3 id="环境准备">环境准备</h3>
+<p>先放上阿chai的测试环境：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">设备</th>
+<th style="text-align:left">操作系统</th>
+<th style="text-align:left">内存</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">CPU云服务器(2核)</td>
+<td style="text-align:left">Ubuntu18.0.4</td>
+<td style="text-align:left">4G</td>
+</tr>
+</tbody>
+</table>
+<p>1.安装PaddlePaddle：</p>
+<pre><code>pip3 install paddlepaddle --upgrade -i https://mirror.baidu.com/pypi/simple
+</code></pre>
+<p>2.安装paddleclas：</p>
+<pre><code>git clone https://github.com/PaddlePaddle/PaddleClas.git
+
+# 安装依赖
+pip3 install --upgrade -r requirements.txt -i https://mirror.baidu.com/pypi/simple
+</code></pre>
+<p>requirements.txt中的gast建议安装成0.3.3的版本：</p>
+<pre><code>pip3 install gast==0.3.3 -i http://pypi.douban.com/simple/
+</code></pre>
+<p>3.编译Tengine-Convert-Tools:</p>
+<pre><code>sudo apt install libprotobuf-dev protobuf-compiler
+
+git clone  https://github.com/OAID/Tengine-Convert-Tools.git
+
+mkdir build &amp;&amp; cd build
+cmake .. &amp;&amp; make
+</code></pre>
+<p>4.编译Tengine：</p>
+<pre><code>sudo apt-get install cmake make g++ git
+
+git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
+
+cd Tengine-Lite
+mkdir build 
+cd build
+cmake ..
+make -j2
+make install
+</code></pre>
+<p>如果出现CMake版本太低，因为经常有使用国内镜像的，所以可能会出现cmake版本低的情况，这里我附上版本3.20.0的安装方式。</p>
+<pre><code>wget https://cmake.org/files/v3.20/cmake-3.20.0-rc4-linux-x86_64.tar.gz
+
+tar -zxvf cmake-3.12.2-Linux-x86_64.tar.gz
+
+#在环境变量中添加export PATH=$PATH:/home/username/filepath/cmake-3.12.2-Linux-x86_64/bin
+
+source ~/.bashrc 
+
+chmod 777 cmake ccmake cmake-gui cpack ctest
+</code></pre>
+<h3 id="模型转换">模型转换</h3>
+<p>1.下载模型：</p>
+<pre><code>wget https://link.zhihu.com/?target=https%3A//paddle-imagenet-models-name.bj.bcebos.com/dygraph/MobileNetV2_pretrained.pdparams
+</code></pre>
+<p>2.依托动态图转换为计算图：</p>
+<pre><code>python3 tools/export_model.py --model MobileNetV2 --pretrained_model ./output/MobileNetV2_pretrained --output_path ./inference --class_dim 1000
+</code></pre>
+<p>静态图的模型文件存放在 inference 目录下，包含以下三个文件：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">文件名</th>
+<th style="text-align:left">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">inference.pdmodel</td>
+<td style="text-align:left">网络结构文件，类似 Caffe 的 prototxt 文件，用于保存 graph 中 node 间连接关系，可以用 Netron 打开进行可视化。</td>
+</tr>
+<tr>
+<td style="text-align:left">inference.pdiparams</td>
+<td style="text-align:left">网络参数文件，类似 Caffe 的 caffemodel 文件，用于保存 weight、bias 等参数数据。</td>
+</tr>
+<tr>
+<td style="text-align:left">http://inference.pdiparams.info</td>
+<td style="text-align:left">临时文件，据说重训练时会用到 ？？？</td>
+</tr>
+</tbody>
+</table>
+<p>3.转换为tmfile：</p>
+<pre><code># 路径设置成自己的
+./convert_tool -f paddle -p inference.pdmodel -m inference.pdiparams -o mobilenetv2_paddle.tmfile
+</code></pre>
+<h3 id="测试">测试</h3>
+<pre><code>./tm_classification -m /root/Desktop/Paddle2/mobilenetv2_paddle.tmfile -i /root/Desktop/Paddle2/cat.jpeg -g 224,224 -s 0.017,0.017,0.017 -r 10
+Mean value not specified, use default   104.0, 116.7, 122.7
+tengine-lite library version: 1.4-dev
+
+model file : /root/Desktop/Paddle2/mobilenetv2_paddle.tmfile
+image file : /root/Desktop/Paddle2/cat.jpeg
+img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
+Repeat 10 times, thread 1, avg time 46.50 ms, max_time 51.41 ms, min_time 44.26 ms
+--------------------------------------
+0.317292, 281
+0.176262, 285
+0.154328, 282
+0.039242, 287
+0.029589, 278
+--------------------------------------
+</code></pre>
+<p>上面是阿chai测试的结果。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Tengine 支持 NPU 模型部署-YOLOv5s]]></title>
+        <id>https://zihan987.github.io/post/tengine-zhi-chi-npu-mo-xing-bu-shu-yolov5s/</id>
+        <link href="https://zihan987.github.io/post/tengine-zhi-chi-npu-mo-xing-bu-shu-yolov5s/">
+        </link>
+        <updated>2021-08-10T12:28:44.000Z</updated>
+        <summary type="html"><![CDATA[<p>Tengine 支持 NPU 模型部署-YOLOv5s</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Tengine 支持 NPU 模型部署-YOLOv5s</p>
+<!-- more -->
+<p>本文来自OpenAILab的圈圈虫大佬(四大卷王之一)。大佬擅长C/C++开发，人工智能算法的部署与模型推理。</p>
+<p>原文链接：https://zhuanlan.zhihu.com/p/360138163</p>
+<p>YOLOv5 自从问世以来，让多目标检测任务在速度和精度上都达到了非常好的表现效果。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQYUGG2ZZxs4icbJibIcA0TBICTicL8ICS8KprFd8qrPo0MkQoBIUPjzsOA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
+<p>今天我们试着基于 AI 边缘计推理框架 Tengine 在 Khadas VIM3 的 AI 加速器上部署 YOLOv5s。</p>
+<h2 id="准备-yolov5s-模型">准备 YOLOv5s 模型</h2>
+<p>我们选取 github 开源项目中预训练好的 YOLOv5s onnx 版本的模型。</p>
+<p>github.com/ultralytics/yolov5/releasesgithub.com</p>
+<p><strong>Focus结构</strong></p>
+<p>Focus 是 YOLOv5 新增的操作，将原始 3<em>640</em>640 的图像输入 Focus 结构，采用切片操作，输出 12<em>320</em>320 的特征图，再送入后续卷积神经网络。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQhwUb0ZAict8UgmGRexTGQsUw0JUE7mX6L54AwrV5KFMaVHu0HGVAgLg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Focus 降维处理？</p>
+<p><strong>HardSwish</strong></p>
+<p>YOLOv5s 中卷积之后的激活操作由 YOLOv4 的 mish 换成了另一种奇怪的 HardSwish：</p>
+<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQBh3SzibKXvZlj2lWmknVDqf6dcM7jS6hzYTI7T6q57eFwvLJQHKUFzg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></figure>
+<p>看一眼就知道在 NPU 上效率不太行</p>
+<p>原始的 PyTorch 使用 ONNX 转出后是这样的：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQSY15dsatWhXEfjjdMXod7IccPeKCYE46ZcA3Iibqt0I25icQ4yTq7CaQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">这就更离谱了，被 ONNX 打散了！</p>
+<p>本次使用的 YOLOv5s 预训练好提供的 ONNX 模型中是这样的：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQj0bc7RBE1zcjUDlHzyvZWrhic8hZvvjGibx1xgDu8MS3QktKYxvufswA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">对于 NPU君 来说，还是太难了</p>
+<p>而对于 NPU 来讲，<strong>她~喜欢</strong>这样的：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQnpdM1bEZG76hZewRhSxgrVXzIoHLCA4TG3fTLeSohshicRKZ3R3eFhA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
+<p>反正全网找了一圈，没有找到完整的 HardSwish OP，为什么会这样呢？询问过 ONNX 官方“十八罗汉” 之一 大老师 给的<strong>非官方答复</strong>是“你们自己想办法<strong>捏回去</strong>吧！因为 ONNX 标准 OP 中没有这个 HardSwish OP......”</p>
+<p><strong>YOLOv5s 的后处理结构</strong></p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQaeVhRmtVyM44xWo2HzJqJHO2t7PVl57zRgDBLrvibx55yDxBmncyekg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">好大一坨，大概率 NPU 也搞不定</p>
+<h2 id="模型优化">模型优化</h2>
+<p>当虫叔想放弃的时候，<strong>星大师</strong> 过来瞅了一眼，说道：</p>
+<blockquote>
+<p>简单！写个 python 脚本而已，分分钟的事情。</p>
+</blockquote>
+<p>Focus、Hardswish、Postprocess 的非常规计算对于边缘计算设备，特别是需要量化操作的 NPU 芯片来说，在速度和精度上未知数太多了。</p>
+<p>因此，我们提供了一个 python脚本（文末提供传送门），<strong>一键</strong>完成以下姿势：</p>
+<ul>
+<li>Focus 裁减；</li>
+<li>Postprocess 裁减；</li>
+<li>HardSwish 合并（针对 sigmod + mul 组合）</li>
+</ul>
+<p>关键函数（虫叔 python 不精通，但是精通C/C++，轻喷~）</p>
+<pre><code>def cut_focus_output(input_node, in_name, out_name, out_num):
+    &quot;&quot;&quot;
+    cut the focus and postprocess nodes
+    Args:
+        input_node: input_node: the nodes of ONNX model
+        in_name:    input cut node name
+        out_name:   output cut node names
+        out_num:    output num
+    Returns:
+        new_nodes:  the new node
+    &quot;&quot;&quot;     
+    node_dict = {}
+    for i in range(len(input_node)):
+        node_dict[input_node[i].output[0]] = i
+    
+    # cut output nodes
+    output_pass = np.zeros((len(input_node)), dtype=np.int)
+    for i in range(out_num):
+        output_pass[node_dict[out_name[i]]] = 2
+
+    for i in range(len(input_node)):
+        for j in input_node[i].input:
+            if j in node_dict:
+                if output_pass[node_dict[j]] == 2 or output_pass[node_dict[j]] == 1:
+                    output_pass[node_dict[input_node[i].output[0]]] = 1
+
+    # cut focus node
+    for i in range(len(output_pass)-1, -1, -1):
+        if output_pass[i] == 1:
+            del input_node[i]
+            
+    new_nodes = input_node[(node_dict[in_name] + 1):]
+
+    return new_nodes
+
+
+def fusion_hardswish(input_node):
+    &quot;&quot;&quot;
+    using HardSwish replace the Sigmoid and Mul
+    Args:
+        input_node: the nodes of ONNX model
+    Returns:
+        the new node
+    &quot;&quot;&quot;     
+    del_list = []
+    for i in range(len(input_node) - 1):
+        if(input_node[i].op_type == 'Sigmoid' and input_node[i+1].op_type == 'Mul'):
+            input_node[i].output[0] = input_node[i+1].output[0]
+            input_node[i].op_type = 'HardSwish'
+            del_list.append(i + 1)
+
+    for i in range(len(del_list)-1, -1, -1):
+        del input_node[del_list[i]]
+
+    return input_node
+</code></pre>
+<p>优化前后的 onnx 模型可视化结果，可以参考这里面的对比（图片有点大）</p>
+<p>OAID/Tenginegithub.com<img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQ4eNVLhYe8MAa7concUo83ztZZ8AUjdWCVOv2KWaOzMHtXVrEHxKYuQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></p>
+<h2 id="khadas-vim3-介绍">Khadas VIM3 介绍</h2>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQNwt7Wffl0Y7iaNhND8hgmfSicJHCzHmGcrP3GDWCGaG0pyib3J9WbduAw/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
+<p>前面几篇文章已经介绍了很多了，主要是采用 TIM-VX 对接其 5Tops 的 AI 加速器。当然，相同的方案理论上支持以下平台。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">厂家</th>
+<th style="text-align:left">芯片型号</th>
+<th style="text-align:left">算力（Tops）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Amlogic</td>
+<td style="text-align:left">A311D</td>
+<td style="text-align:left">5.0</td>
+</tr>
+<tr>
+<td style="text-align:left"></td>
+<td style="text-align:left">S905D3</td>
+<td style="text-align:left">1.2</td>
+</tr>
+<tr>
+<td style="text-align:left">NXP</td>
+<td style="text-align:left">i.MX 8M Plus</td>
+<td style="text-align:left">2.4</td>
+</tr>
+</tbody>
+</table>
+<p>https://zhuanlan.zhihu.com/p/350327223zhuanlan.zhihu.com<img src="https://mmbiz.qpic.cn/mmbiz_svg/jJSbu4Te5ibibwKDjK3Of9FibticlrRicA2F4P7ictnFq54QbEosPk1YSqhQeV0REnW8OvDbllrLrMl7brXicq6C2DcjriaC8icxSSoxa/640?wx_fmt=svg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></p>
+<p><strong>Tengine 推理框架运行 YOLOv5s</strong></p>
+<p>依赖 Tengine uint8 tmfile，因此需要两步完成，首先通过 Tengine 模型转换工具将 yolov5s-opt.onnx 转换成 yolov5s.tmfile。</p>
+<pre><code>$ ./tm_convert_tool -f onnx -m yolov5s-opt.onnx -o yolov5s.tmfile
+
+---- Tengine Convert Tool ----
+
+Version     : v1.0, 20:25:28 Mar 25 2021
+Status      : float32
+Create tengine model file done: yolov5s.tmfile
+</code></pre>
+<p>再使用开放的 Tengine 量化工具 quant_tool_uint8，校准数据随机从 COCO 数据集中抽取的 10 张，将 yolov5s.tmfile 压缩量化成 yolov5s_uint8.tmfile。</p>
+<pre><code>./quant_tool_uint8 -m yolov5s-relu.tmfile -i coco_1/ -o yolov5s-relu_uint8.tmfile -g 12,320,320 -w 0,0,0 -s 0.0039
+21,0.003921,0.003921 -c 0 -k 1 -t 2
+
+---- Tengine Post Training Quantization Tool ----
+
+Version     : v1.1, 09:33:45 Mar 26 2021
+Status      : uint8, per-layer, asymmetric
+Input model : yolov5s.tmfile
+Output model: yolov5s_uint8.tmfile
+Calib images: coco/
+Algorithm   : MIN MAX
+Dims        : 12 320 320
+Mean        : 0.000 0.000 0.000
+Scale       : 0.004 0.004 0.004
+BGR2RGB     : ON
+Center crop : OFF
+Letter box  : OFF
+YOLOv5 focus: ON
+Thread num  : 2
+
+[Quant Tools Info]: Step 0, load FP32 tmfile.
+[Quant Tools Info]: Step 0, load FP32 tmfile done.
+[Quant Tools Info]: Step 0, load calibration image files.
+[Quant Tools Info]: Step 0, load calibration image files done, image num is 10.
+[Quant Tools Info]: Step 1, find original calibration table.
+[Quant Tools Info]: Step 1, images 00010 / 00010
+[Quant Tools Info]: Step 1, find original calibration table done, output ./table_minmax.scale
+[Quant Tools Info]: Step 2, find calibration table.
+[Quant Tools Info]: Step 2, images 00001 / 00010
+[Quant Tools Info]: Step 2, find calibration table done, output ./table_kl.scale
+[Quant Tools Info]: Thread 2, image nums 10, total time 3678.77 ms, avg time 367.88 ms
+[Quant Tools Info]: Calibration file is using table_minmax.scale
+[Quant Tools Info]: Step 3, load FP32 tmfile once again
+[Quant Tools Info]: Step 3, load FP32 tmfile once again done.
+[Quant Tools Info]: Step 3, load calibration table file table_minmax.scale.
+[Quant Tools Info]: Step 4, optimize the calibration table.
+[Quant Tools Info]: Step 4, quantize activation tensor done.
+[Quant Tools Info]: Step 5, quantize weight tensor done.
+[Quant Tools Info]: Step 6, save Int8 tmfile done, yolov5s_uint8.tmfile
+
+---- Tengine Int8 tmfile create success, best wish for your INT8 inference has a low accuracy loss...\(^0^)/ ----
+</code></pre>
+<p><strong>执行流程</strong></p>
+<p>初始化 -&gt; 启用 TIM-VX 后端 -&gt; 加载模型 -&gt; 加载图片 -&gt; 预处理 -&gt; 运行计算图 -&gt; 后处理 -&gt; 绘制结果（完整代码见本文末尾）</p>
+<pre><code>    /* set runtime options */
+    struct options opt;
+    opt.num_thread = num_thread;
+    opt.cluster = TENGINE_CLUSTER_ALL;
+    opt.precision = TENGINE_MODE_UINT8;
+    opt.affinity = 0;
+
+    /* inital tengine */
+    init_tengine()
+
+    /* create VeriSilicon TIM-VX backend */
+    context_t timvx_context = create_context(&quot;timvx&quot;, 1);
+    int rtt = add_context_device(timvx_context, &quot;TIMVX&quot;);
+
+    /* create graph, load tengine model xxx.tmfile */
+    graph_t graph = create_graph(timvx_context, &quot;tengine&quot;, model_file);
+
+    /* prerun graph, set work options(num_thread, cluster, precision) */
+    prerun_graph_multithread(graph, opt);
+
+    /* prepare process input data, set the data mem to input tensor */
+    float input_scale = 0.f;
+    int input_zero_point = 0;
+    get_tensor_quant_param(input_tensor, &amp;input_scale, &amp;input_zero_point, 1);    
+    get_input_data_focas_uint8(image_file, input_data, img_h, img_w, mean, scale, input_scale, input_zero_point);
+
+    /* run graph */
+    run_graph(graph, 1);
+
+    /* yolov5 postprocess */
+    tensor_t p8_output = get_graph_output_tensor(graph, 0, 0);
+    tensor_t p16_output = get_graph_output_tensor(graph, 1, 0);
+    tensor_t p32_output = get_graph_output_tensor(graph, 2, 0);
+</code></pre>
+<p>预处理这里需要注意的地方是，需要做 letterbox 处理，将图片补齐到 640*640，应该是以下效果。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQe8MSNl2SmW9jziajvQu4cZvPocv92RVhpibBAlsPhRWqS1iciad4V5BWtQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">原始图片，BGR2RGB</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQ2ibTiaR3zAtn7LUqZFoZNwN8fFIicXhDf8a7ibAyz4gPUSbB7RfmpGBKXQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Letterbox 640 处理之后</p>
+<p>最终在 Khadas VIM3 上的耗时表现</p>
+<pre><code>khadas@Khadas:~/qtang/tengine-lite/build/examples$ ./tm_yolov5s_timvx -m yolov5s_uint8.tmfile -i ssd_dog.jpg -r 5
+Tengine plugin allocator TIMVX is registered.
+tengine-lite library version: 1.2-dev
+TIM-VX prerun.
+Repeat 5 times, thread 1, avg time 71.51 ms, max_time 74.49 ms, min_time 68.43 ms
+--------------------------------------
+detection num: 3
+16: 88%, [ 135,  224,  313,  547], dog
+ 7: 86%, [ 472,   73,  693,  171], truck
+ 1: 73%, [ 130,  108,  574,  439], bicycle
+</code></pre>
+<p>Float32模型与 Int8模型输出结果对比，感觉还行。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQhvJBMib4UTKEqnLjKBrMyrhPA5VU2RLZiaM38PEic4YvJiaccKiczacCftQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Float32 模型检测结果</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQxha4ia1OtJ0gOpqg5TcoVqlPggfcITz6a7kULyWQFtuMR1mnGZfZa7A/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Khadas VIM3 NPU Uint8 量化模型检测结果</p>
+<h2 id="总结">总结</h2>
+<p><strong>主要贡献：</strong></p>
+<ol>
+<li>提供了一个“一键”优化 YOLOv5s ONNX 开源版本模型的 python 脚本；</li>
+<li>再一次迭代了量化工具，支持 Focus 处理（精度居然没蹦，也是意外收获）</li>
+</ol>
+<p>至于在 Khadas VIM3 上的部署，今年以来 Tengine 和 VSI 团队紧密联合开发，问题不大，官方支持。</p>
+<p><strong>遗留问题：</strong></p>
+<ol>
+<li>YOLOv5s 的原始网络结构可进一步优化，在精度不掉的情况下，<strong>速度提升 15% - 20%</strong>（溜了……）</li>
+<li>更高效的 Focus 计算方案。</li>
+</ol>
+<h2 id="传送门">传送门</h2>
+<ul>
+<li></li>
+<li></li>
+<li></li>
+</ul>
+<pre><code>https://github.com/OAID/Tenginehttps://github.com/OAID/Tengine/tree/tengine-lite/tools/optimizehttps://github.com/OAID/Tengine/blob/tengine-lite/examples/tm_yolov5s_timvx.cpp
+```![](https://zihan987.github.io/post-images/1628598818726.png)</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Khadas VIM3(Amlogic A311D)上进行Tengine模型推理]]></title>
         <id>https://zihan987.github.io/post/vim3-shang-bu-shu/</id>

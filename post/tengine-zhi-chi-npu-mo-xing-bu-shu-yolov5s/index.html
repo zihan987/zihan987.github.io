@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>Tengine 支持 NPU 模型部署-YOLOv5s | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628599986967">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Tengine 支持 NPU 模型部署-YOLOv5s
+
+本文来自OpenAILab的圈圈虫大佬(四大卷王之一)。大佬擅长C/C++开发，人工智能算法的部署与模型推理。
+原文链接：https://zhuanlan.zhihu.com/p/3..." />
+    <meta name="keywords" content="算法侧端部署" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628599986967" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">Tengine 支持 NPU 模型部署-YOLOv5s</h2>
+            <div class="post-date">2021-08-10</div>
+            
+              <div class="feature-container" style="background-image: url('https://zihan987.github.io/post-images/tengine-zhi-chi-npu-mo-xing-bu-shu-yolov5s.png')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>Tengine 支持 NPU 模型部署-YOLOv5s</p>
+<!-- more -->
+<p>本文来自OpenAILab的圈圈虫大佬(四大卷王之一)。大佬擅长C/C++开发，人工智能算法的部署与模型推理。</p>
+<p>原文链接：https://zhuanlan.zhihu.com/p/360138163</p>
+<p>YOLOv5 自从问世以来，让多目标检测任务在速度和精度上都达到了非常好的表现效果。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQYUGG2ZZxs4icbJibIcA0TBICTicL8ICS8KprFd8qrPo0MkQoBIUPjzsOA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
+<p>今天我们试着基于 AI 边缘计推理框架 Tengine 在 Khadas VIM3 的 AI 加速器上部署 YOLOv5s。</p>
+<h2 id="准备-yolov5s-模型">准备 YOLOv5s 模型</h2>
+<p>我们选取 github 开源项目中预训练好的 YOLOv5s onnx 版本的模型。</p>
+<p>github.com/ultralytics/yolov5/releasesgithub.com</p>
+<p><strong>Focus结构</strong></p>
+<p>Focus 是 YOLOv5 新增的操作，将原始 3<em>640</em>640 的图像输入 Focus 结构，采用切片操作，输出 12<em>320</em>320 的特征图，再送入后续卷积神经网络。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQhwUb0ZAict8UgmGRexTGQsUw0JUE7mX6L54AwrV5KFMaVHu0HGVAgLg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Focus 降维处理？</p>
+<p><strong>HardSwish</strong></p>
+<p>YOLOv5s 中卷积之后的激活操作由 YOLOv4 的 mish 换成了另一种奇怪的 HardSwish：</p>
+<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQBh3SzibKXvZlj2lWmknVDqf6dcM7jS6hzYTI7T6q57eFwvLJQHKUFzg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></figure>
+<p>看一眼就知道在 NPU 上效率不太行</p>
+<p>原始的 PyTorch 使用 ONNX 转出后是这样的：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQSY15dsatWhXEfjjdMXod7IccPeKCYE46ZcA3Iibqt0I25icQ4yTq7CaQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">这就更离谱了，被 ONNX 打散了！</p>
+<p>本次使用的 YOLOv5s 预训练好提供的 ONNX 模型中是这样的：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQj0bc7RBE1zcjUDlHzyvZWrhic8hZvvjGibx1xgDu8MS3QktKYxvufswA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">对于 NPU君 来说，还是太难了</p>
+<p>而对于 NPU 来讲，<strong>她~喜欢</strong>这样的：</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQnpdM1bEZG76hZewRhSxgrVXzIoHLCA4TG3fTLeSohshicRKZ3R3eFhA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
+<p>反正全网找了一圈，没有找到完整的 HardSwish OP，为什么会这样呢？询问过 ONNX 官方“十八罗汉” 之一 大老师 给的<strong>非官方答复</strong>是“你们自己想办法<strong>捏回去</strong>吧！因为 ONNX 标准 OP 中没有这个 HardSwish OP......”</p>
+<p><strong>YOLOv5s 的后处理结构</strong></p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQaeVhRmtVyM44xWo2HzJqJHO2t7PVl57zRgDBLrvibx55yDxBmncyekg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">好大一坨，大概率 NPU 也搞不定</p>
+<h2 id="模型优化">模型优化</h2>
+<p>当虫叔想放弃的时候，<strong>星大师</strong> 过来瞅了一眼，说道：</p>
+<blockquote>
+<p>简单！写个 python 脚本而已，分分钟的事情。</p>
+</blockquote>
+<p>Focus、Hardswish、Postprocess 的非常规计算对于边缘计算设备，特别是需要量化操作的 NPU 芯片来说，在速度和精度上未知数太多了。</p>
+<p>因此，我们提供了一个 python脚本（文末提供传送门），<strong>一键</strong>完成以下姿势：</p>
+<ul>
+<li>Focus 裁减；</li>
+<li>Postprocess 裁减；</li>
+<li>HardSwish 合并（针对 sigmod + mul 组合）</li>
+</ul>
+<p>关键函数（虫叔 python 不精通，但是精通C/C++，轻喷~）</p>
+<pre><code>def cut_focus_output(input_node, in_name, out_name, out_num):
+    &quot;&quot;&quot;
+    cut the focus and postprocess nodes
+    Args:
+        input_node: input_node: the nodes of ONNX model
+        in_name:    input cut node name
+        out_name:   output cut node names
+        out_num:    output num
+    Returns:
+        new_nodes:  the new node
+    &quot;&quot;&quot;     
+    node_dict = {}
+    for i in range(len(input_node)):
+        node_dict[input_node[i].output[0]] = i
+    
+    # cut output nodes
+    output_pass = np.zeros((len(input_node)), dtype=np.int)
+    for i in range(out_num):
+        output_pass[node_dict[out_name[i]]] = 2
+
+    for i in range(len(input_node)):
+        for j in input_node[i].input:
+            if j in node_dict:
+                if output_pass[node_dict[j]] == 2 or output_pass[node_dict[j]] == 1:
+                    output_pass[node_dict[input_node[i].output[0]]] = 1
+
+    # cut focus node
+    for i in range(len(output_pass)-1, -1, -1):
+        if output_pass[i] == 1:
+            del input_node[i]
+            
+    new_nodes = input_node[(node_dict[in_name] + 1):]
+
+    return new_nodes
+
+
+def fusion_hardswish(input_node):
+    &quot;&quot;&quot;
+    using HardSwish replace the Sigmoid and Mul
+    Args:
+        input_node: the nodes of ONNX model
+    Returns:
+        the new node
+    &quot;&quot;&quot;     
+    del_list = []
+    for i in range(len(input_node) - 1):
+        if(input_node[i].op_type == 'Sigmoid' and input_node[i+1].op_type == 'Mul'):
+            input_node[i].output[0] = input_node[i+1].output[0]
+            input_node[i].op_type = 'HardSwish'
+            del_list.append(i + 1)
+
+    for i in range(len(del_list)-1, -1, -1):
+        del input_node[del_list[i]]
+
+    return input_node
+</code></pre>
+<p>优化前后的 onnx 模型可视化结果，可以参考这里面的对比（图片有点大）</p>
+<p>OAID/Tenginegithub.com<img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQ4eNVLhYe8MAa7concUo83ztZZ8AUjdWCVOv2KWaOzMHtXVrEHxKYuQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></p>
+<h2 id="khadas-vim3-介绍">Khadas VIM3 介绍</h2>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQNwt7Wffl0Y7iaNhND8hgmfSicJHCzHmGcrP3GDWCGaG0pyib3J9WbduAw/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
+<p>前面几篇文章已经介绍了很多了，主要是采用 TIM-VX 对接其 5Tops 的 AI 加速器。当然，相同的方案理论上支持以下平台。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">厂家</th>
+<th style="text-align:left">芯片型号</th>
+<th style="text-align:left">算力（Tops）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Amlogic</td>
+<td style="text-align:left">A311D</td>
+<td style="text-align:left">5.0</td>
+</tr>
+<tr>
+<td style="text-align:left"></td>
+<td style="text-align:left">S905D3</td>
+<td style="text-align:left">1.2</td>
+</tr>
+<tr>
+<td style="text-align:left">NXP</td>
+<td style="text-align:left">i.MX 8M Plus</td>
+<td style="text-align:left">2.4</td>
+</tr>
+</tbody>
+</table>
+<p>https://zhuanlan.zhihu.com/p/350327223zhuanlan.zhihu.com<img src="https://mmbiz.qpic.cn/mmbiz_svg/jJSbu4Te5ibibwKDjK3Of9FibticlrRicA2F4P7ictnFq54QbEosPk1YSqhQeV0REnW8OvDbllrLrMl7brXicq6C2DcjriaC8icxSSoxa/640?wx_fmt=svg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></p>
+<p><strong>Tengine 推理框架运行 YOLOv5s</strong></p>
+<p>依赖 Tengine uint8 tmfile，因此需要两步完成，首先通过 Tengine 模型转换工具将 yolov5s-opt.onnx 转换成 yolov5s.tmfile。</p>
+<pre><code>$ ./tm_convert_tool -f onnx -m yolov5s-opt.onnx -o yolov5s.tmfile
+
+---- Tengine Convert Tool ----
+
+Version     : v1.0, 20:25:28 Mar 25 2021
+Status      : float32
+Create tengine model file done: yolov5s.tmfile
+</code></pre>
+<p>再使用开放的 Tengine 量化工具 quant_tool_uint8，校准数据随机从 COCO 数据集中抽取的 10 张，将 yolov5s.tmfile 压缩量化成 yolov5s_uint8.tmfile。</p>
+<pre><code>./quant_tool_uint8 -m yolov5s-relu.tmfile -i coco_1/ -o yolov5s-relu_uint8.tmfile -g 12,320,320 -w 0,0,0 -s 0.0039
+21,0.003921,0.003921 -c 0 -k 1 -t 2
+
+---- Tengine Post Training Quantization Tool ----
+
+Version     : v1.1, 09:33:45 Mar 26 2021
+Status      : uint8, per-layer, asymmetric
+Input model : yolov5s.tmfile
+Output model: yolov5s_uint8.tmfile
+Calib images: coco/
+Algorithm   : MIN MAX
+Dims        : 12 320 320
+Mean        : 0.000 0.000 0.000
+Scale       : 0.004 0.004 0.004
+BGR2RGB     : ON
+Center crop : OFF
+Letter box  : OFF
+YOLOv5 focus: ON
+Thread num  : 2
+
+[Quant Tools Info]: Step 0, load FP32 tmfile.
+[Quant Tools Info]: Step 0, load FP32 tmfile done.
+[Quant Tools Info]: Step 0, load calibration image files.
+[Quant Tools Info]: Step 0, load calibration image files done, image num is 10.
+[Quant Tools Info]: Step 1, find original calibration table.
+[Quant Tools Info]: Step 1, images 00010 / 00010
+[Quant Tools Info]: Step 1, find original calibration table done, output ./table_minmax.scale
+[Quant Tools Info]: Step 2, find calibration table.
+[Quant Tools Info]: Step 2, images 00001 / 00010
+[Quant Tools Info]: Step 2, find calibration table done, output ./table_kl.scale
+[Quant Tools Info]: Thread 2, image nums 10, total time 3678.77 ms, avg time 367.88 ms
+[Quant Tools Info]: Calibration file is using table_minmax.scale
+[Quant Tools Info]: Step 3, load FP32 tmfile once again
+[Quant Tools Info]: Step 3, load FP32 tmfile once again done.
+[Quant Tools Info]: Step 3, load calibration table file table_minmax.scale.
+[Quant Tools Info]: Step 4, optimize the calibration table.
+[Quant Tools Info]: Step 4, quantize activation tensor done.
+[Quant Tools Info]: Step 5, quantize weight tensor done.
+[Quant Tools Info]: Step 6, save Int8 tmfile done, yolov5s_uint8.tmfile
+
+---- Tengine Int8 tmfile create success, best wish for your INT8 inference has a low accuracy loss...\(^0^)/ ----
+</code></pre>
+<p><strong>执行流程</strong></p>
+<p>初始化 -&gt; 启用 TIM-VX 后端 -&gt; 加载模型 -&gt; 加载图片 -&gt; 预处理 -&gt; 运行计算图 -&gt; 后处理 -&gt; 绘制结果（完整代码见本文末尾）</p>
+<pre><code>    /* set runtime options */
+    struct options opt;
+    opt.num_thread = num_thread;
+    opt.cluster = TENGINE_CLUSTER_ALL;
+    opt.precision = TENGINE_MODE_UINT8;
+    opt.affinity = 0;
+
+    /* inital tengine */
+    init_tengine()
+
+    /* create VeriSilicon TIM-VX backend */
+    context_t timvx_context = create_context(&quot;timvx&quot;, 1);
+    int rtt = add_context_device(timvx_context, &quot;TIMVX&quot;);
+
+    /* create graph, load tengine model xxx.tmfile */
+    graph_t graph = create_graph(timvx_context, &quot;tengine&quot;, model_file);
+
+    /* prerun graph, set work options(num_thread, cluster, precision) */
+    prerun_graph_multithread(graph, opt);
+
+    /* prepare process input data, set the data mem to input tensor */
+    float input_scale = 0.f;
+    int input_zero_point = 0;
+    get_tensor_quant_param(input_tensor, &amp;input_scale, &amp;input_zero_point, 1);    
+    get_input_data_focas_uint8(image_file, input_data, img_h, img_w, mean, scale, input_scale, input_zero_point);
+
+    /* run graph */
+    run_graph(graph, 1);
+
+    /* yolov5 postprocess */
+    tensor_t p8_output = get_graph_output_tensor(graph, 0, 0);
+    tensor_t p16_output = get_graph_output_tensor(graph, 1, 0);
+    tensor_t p32_output = get_graph_output_tensor(graph, 2, 0);
+</code></pre>
+<p>预处理这里需要注意的地方是，需要做 letterbox 处理，将图片补齐到 640*640，应该是以下效果。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQe8MSNl2SmW9jziajvQu4cZvPocv92RVhpibBAlsPhRWqS1iciad4V5BWtQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">原始图片，BGR2RGB</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQ2ibTiaR3zAtn7LUqZFoZNwN8fFIicXhDf8a7ibAyz4gPUSbB7RfmpGBKXQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Letterbox 640 处理之后</p>
+<p>最终在 Khadas VIM3 上的耗时表现</p>
+<pre><code>khadas@Khadas:~/qtang/tengine-lite/build/examples$ ./tm_yolov5s_timvx -m yolov5s_uint8.tmfile -i ssd_dog.jpg -r 5
+Tengine plugin allocator TIMVX is registered.
+tengine-lite library version: 1.2-dev
+TIM-VX prerun.
+Repeat 5 times, thread 1, avg time 71.51 ms, max_time 74.49 ms, min_time 68.43 ms
+--------------------------------------
+detection num: 3
+16: 88%, [ 135,  224,  313,  547], dog
+ 7: 86%, [ 472,   73,  693,  171], truck
+ 1: 73%, [ 130,  108,  574,  439], bicycle
+</code></pre>
+<p>Float32模型与 Int8模型输出结果对比，感觉还行。</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQhvJBMib4UTKEqnLjKBrMyrhPA5VU2RLZiaM38PEic4YvJiaccKiczacCftQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Float32 模型检测结果</p>
+<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQxha4ia1OtJ0gOpqg5TcoVqlPggfcITz6a7kULyWQFtuMR1mnGZfZa7A/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Khadas VIM3 NPU Uint8 量化模型检测结果</p>
+<h2 id="总结">总结</h2>
+<p><strong>主要贡献：</strong></p>
+<ol>
+<li>提供了一个“一键”优化 YOLOv5s ONNX 开源版本模型的 python 脚本；</li>
+<li>再一次迭代了量化工具，支持 Focus 处理（精度居然没蹦，也是意外收获）</li>
+</ol>
+<p>至于在 Khadas VIM3 上的部署，今年以来 Tengine 和 VSI 团队紧密联合开发，问题不大，官方支持。</p>
+<p><strong>遗留问题：</strong></p>
+<ol>
+<li>YOLOv5s 的原始网络结构可进一步优化，在精度不掉的情况下，<strong>速度提升 15% - 20%</strong>（溜了……）</li>
+<li>更高效的 Focus 计算方案。</li>
+</ol>
+<h2 id="传送门">传送门</h2>
+<ul>
+<li></li>
+<li></li>
+<li></li>
+</ul>
+<pre><code>https://github.com/OAID/Tenginehttps://github.com/OAID/Tengine/tree/tengine-lite/tools/optimizehttps://github.com/OAID/Tengine/blob/tengine-lite/examples/tm_yolov5s_timvx.cpp
+```![](https://zihan987.github.io/post-images/1628598818726.png)</code></pre>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://zihan987.github.io/tag/SH-93dAGg/" class="tag">
+                    算法侧端部署
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/vim3-shang-bu-shu/">
+                  <h3 class="post-title">
+                    Khadas VIM3(Amlogic A311D)上进行Tengine模型推理
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>
