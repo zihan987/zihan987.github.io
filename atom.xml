@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zihan987.github.io</id>
     <title>阿chai带你学AI</title>
-    <updated>2021-08-12T05:38:45.277Z</updated>
+    <updated>2021-08-12T05:40:15.035Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://zihan987.github.io"/>
     <link rel="self" href="https://zihan987.github.io/atom.xml"/>
@@ -16,8 +16,10 @@
         <link href="https://zihan987.github.io/post/raspberry-pico-jiao-cheng/">
         </link>
         <updated>2021-08-12T05:22:22.000Z</updated>
+        <summary type="html"><![CDATA[<p>Pico是树莓派基金协会发布的一款单片机板卡，体积小，用python语言就能开发。</p>
+]]></summary>
         <content type="html"><![CDATA[<p>Pico是树莓派基金协会发布的一款单片机板卡，体积小，用python语言就能开发。</p>
-<figure data-type="image" tabindex="1"><img src="https://p4.itc.cn/q_70/images03/20210224/70fbb4280409402ebccb86c286fb4ca7.png" alt="img" loading="lazy"></figure>
+<!-- more -->
 <p>Pico的官方教程是英文的，因此阿chai在这里整理一下使用教程以及配套的案例，小伙伴们可以来一起学习。</p>
 <p>在看教程之前需要下载阿chai提供的Demo：</p>
 <pre><code class="language-html">https://github.com/zihan987/Raspberry-Pi-Pico.git
