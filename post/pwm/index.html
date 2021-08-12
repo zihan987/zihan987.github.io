@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>PWM | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="脉冲宽度调制是一种模拟控制方式，根据相应载荷的变化来调制晶体管基极或MOS管栅极的偏置，来实现晶体管或MOS管导通时间的改变，从而实现开关稳压电源输出的改变。这种方式能使电源的输出电压在工作条件变化时保持恒定，是利用微处理器的数字信号对模拟..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">PWM</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/PWM.jpg?raw=true')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>脉冲宽度调制是一种模拟控制方式，根据相应载荷的变化来调制晶体管基极或MOS管栅极的偏置，来实现晶体管或MOS管导通时间的改变，从而实现开关稳压电源输出的改变。这种方式能使电源的输出电压在工作条件变化时保持恒定，是利用微处理器的数字信号对模拟电路进行控制的一种非常有效的技术。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<pre><code class="language-python">import time
+from machine import Pin, PWM
+
+
+# Construct PWM object, with LED on Pin(25).
+pwm = PWM(Pin(25))
+
+# Set the PWM frequency.
+pwm.freq(1000)
+
+# Fade the LED in and out a few times.
+duty = 0
+direction = 1
+for _ in range(8 * 256):
+    duty += direction
+    if duty &gt; 255:
+        duty = 255
+        direction = -1
+    elif duty &lt; 0:
+        duty = 0
+        direction = 1
+    pwm.duty_u16(duty * duty)
+    time.sleep(0.001)
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>以呼吸灯为例，LED为核心板上的。</p>
+<pre><code class="language-c">#include &quot;pico/stdlib.h&quot;
+#include &lt;stdio.h&gt;
+#include &quot;pico/time.h&quot;
+#include &quot;hardware/irq.h&quot;
+#include &quot;hardware/pwm.h&quot;
+
+void on_pwm_wrap() {
+    static int fade = 0;
+    static bool going_up = true;
+    // Clear the interrupt flag that brought us here
+    pwm_clear_irq(pwm_gpio_to_slice_num(PICO_DEFAULT_LED_PIN));
+
+    if (going_up) {
+        ++fade;
+        if (fade &gt; 255) {
+            fade = 255;
+            going_up = false;
+        }
+    } else {
+        --fade;
+        if (fade &lt; 0) {
+            fade = 0;
+            going_up = true;
+        }
+    }
+    // Square the fade value to make the LED's brightness appear more linear
+    // Note this range matches with the wrap value
+    pwm_set_gpio_level(PICO_DEFAULT_LED_PIN, fade * fade);
+}
+
+int main() {
+    // Tell the LED pin that the PWM is in charge of its value.
+    gpio_set_function(PICO_DEFAULT_LED_PIN, GPIO_FUNC_PWM);
+    // Figure out which slice we just connected to the LED pin
+    uint slice_num = pwm_gpio_to_slice_num(PICO_DEFAULT_LED_PIN);
+
+    pwm_clear_irq(slice_num);
+    pwm_set_irq_enabled(slice_num, true);
+    irq_set_exclusive_handler(PWM_IRQ_WRAP, on_pwm_wrap);
+    irq_set_enabled(PWM_IRQ_WRAP, true);
+
+    // counter is allowed to wrap over its maximum range (0 to 2**16-1)
+    pwm_config config = pwm_get_default_config();
+    // Set divider, reduces counter clock to sysclock/this value
+    pwm_config_set_clkdiv(&amp;config, 4.f);
+    // Load the configuration into our PWM slice, and set it running.
+    pwm_init(slice_num, &amp;config, true);
+
+    while (1)
+        tight_loop_contents();
+}
+
+</code></pre>
+<p>CMakeList.txt:</p>
+<pre><code class="language-cmake">add_executable(pwm_led_fade
+        pwm_led_fade.c
+        )
+
+# Pull in our pico_stdlib which pulls in commonly used features
+target_link_libraries(pwm_led_fade pico_stdlib hardware_pwm)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(pwm_led_fade)
+
+# add url via pico_set_program_url
+example_auto_set_url(pwm_led_fade)
+</code></pre>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/adc/">
+                  <h3 class="post-title">
+                    ADC
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

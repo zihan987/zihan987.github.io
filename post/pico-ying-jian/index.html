@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>Pico硬件 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Raspberry Pi Pico的开发环境我已经搭建好，接下来我们开始进入开发的正题，Pico和之前的Pi一样，也是具备一些GPIO供大家使用。
+
+
+
+Raspberry Pi在英国设计的RP2040微控制器芯片
+
+
+双核Arm Cort..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">Pico硬件</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/GPIO.jpg?raw=true')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>Raspberry Pi Pico的开发环境我已经搭建好，接下来我们开始进入开发的正题，Pico和之前的Pi一样，也是具备一些GPIO供大家使用。</p>
+<!-- more -->
+<ul>
+<li>
+<p>Raspberry Pi在英国设计的RP2040微控制器芯片</p>
+</li>
+<li>
+<p>双核Arm Cortex M0 +处理器，时钟频率高达133 MHz</p>
+</li>
+<li>
+<p>264KB的SRAM和2MB的板载闪存</p>
+</li>
+<li>
+<p>形模块允许直接焊接到载板</p>
+</li>
+<li>
+<p>具有设备和主机支持的USB 1.1</p>
+</li>
+<li>
+<p>低功耗睡眠和休眠模式</p>
+</li>
+<li>
+<p>通过USB使用大容量存储进行拖放编程</p>
+</li>
+<li>
+<p>26个多功能GPIO引脚</p>
+</li>
+<li>
+<p>2个SPI，2个I2C，2个UART，3个12位ADC，16个可控PWM通道</p>
+</li>
+<li>
+<p>片上准确的时钟和计时器</p>
+</li>
+<li>
+<p>温度感应器</p>
+</li>
+<li>
+<p>片上加速浮点库</p>
+</li>
+<li>
+<p>8个可编程I/O(PIO)状态机，用于自定义外围设备支持</p>
+</li>
+</ul>
+<p>Pico的内核是ARM Crotex-M0的内核，也就是说他的CPU是ARM系列的单片机，那么对应的外设资源就是IO、串口、SPI、I2C等等。那么我们学习的时候可以根据单片机的方法去学习。</p>
+<p>除了核心板，官网还提供了一个插件的面包板，如下图所示。</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/%E9%9D%A2%E5%8C%85%E6%9D%BF.jpg?raw=true" alt="面包板.jpg" loading="lazy"></figure>
+<p>支持自己的DIY，开源了外设板卡：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/%E5%A4%96%E8%AE%BE%E6%9D%BF%E5%8D%A1.jpg?raw=true" alt="外设板卡.jpg" loading="lazy"></figure>
+<p>同样，核心板的原理图也开源了：</p>
+<figure data-type="image" tabindex="3"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/%E5%8E%9F%E7%90%86%E5%9B%BE.png?raw=true" alt="原理图.png" loading="lazy"></figure>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/pico-kai-fa-huan-jing-an-zhuang/">
+                  <h3 class="post-title">
+                    PICO开发环境安装
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

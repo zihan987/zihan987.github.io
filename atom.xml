@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zihan987.github.io</id>
     <title>阿chai带你学AI</title>
-    <updated>2021-08-10T12:53:37.080Z</updated>
+    <updated>2021-08-12T05:38:45.277Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://zihan987.github.io"/>
     <link rel="self" href="https://zihan987.github.io/atom.xml"/>
@@ -11,882 +11,1616 @@
     <icon>https://zihan987.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 阿chai带你学AI</rights>
     <entry>
-        <title type="html"><![CDATA[VSLAM中剔除动态目标的视觉里程计]]></title>
-        <id>https://zihan987.github.io/post/vslam-zhong-ti-chu-dong-tai-mu-biao-de-shi-jue-li-cheng-ji/</id>
-        <link href="https://zihan987.github.io/post/vslam-zhong-ti-chu-dong-tai-mu-biao-de-shi-jue-li-cheng-ji/">
+        <title type="html"><![CDATA[Raspberry Pico教程]]></title>
+        <id>https://zihan987.github.io/post/raspberry-pico-jiao-cheng/</id>
+        <link href="https://zihan987.github.io/post/raspberry-pico-jiao-cheng/">
         </link>
-        <updated>2021-08-10T12:48:06.000Z</updated>
-        <summary type="html"><![CDATA[<p>地图构建是SLAM系统中非常重要的部分，一个信息完善的地图对于后续导航相当重要。运动场景中除了静态的元素外也会出现一些例如行人、其他机器人等动态元素，对于导航而言，需要避开但是我们不希望出现在地图模型中，会让机器人认为障碍物的“真实面貌”就是这样，因此我们需要筛选元素，存储到语义图谱中。今天阿chai给大家介绍一种SLAM中动态元素筛选的方法。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>地图构建是SLAM系统中非常重要的部分，一个信息完善的地图对于后续导航相当重要。运动场景中除了静态的元素外也会出现一些例如行人、其他机器人等动态元素，对于导航而言，需要避开但是我们不希望出现在地图模型中，会让机器人认为障碍物的“真实面貌”就是这样，因此我们需要筛选元素，存储到语义图谱中。今天阿chai给大家介绍一种SLAM中动态元素筛选的方法。</p>
-<!-- more -->
-<h3 id="1-main">1. Main</h3>
-<p>以下是动态目标筛选的算法流程。</p>
-<figure data-type="image" tabindex="1"><img src="https://zihan987.github.io/post-images/1628599760313.png" alt="" loading="lazy"></figure>
-<p>接下来我们详细的讲解一下。</p>
-<h3 id="2-yolox的动态目标筛选">2. YOLOX的动态目标筛选</h3>
-<p>YOLOX是旷视研究院开源的目标检测算法，赢得了Streaming Perception的第一名。算法是YOLO系列的改进，Anchor- Free，decoupled head、NMS-free以及SimOTA是算法的亮点， COCO 上实现了 50.0% AP，并且提供了ONNX模型，支持TensorRT、NCNN 和 Openvino 的侧端推理部署的版本。</p>
-<figure data-type="image" tabindex="2"><img src="https://zihan987.github.io/post-images/1628599777231.jpg" alt="" loading="lazy"></figure>
+        <updated>2021-08-12T05:22:22.000Z</updated>
+        <content type="html"><![CDATA[<p>Pico是树莓派基金协会发布的一款单片机板卡，体积小，用python语言就能开发。</p>
+<figure data-type="image" tabindex="1"><img src="https://p4.itc.cn/q_70/images03/20210224/70fbb4280409402ebccb86c286fb4ca7.png" alt="img" loading="lazy"></figure>
+<p>Pico的官方教程是英文的，因此阿chai在这里整理一下使用教程以及配套的案例，小伙伴们可以来一起学习。</p>
+<p>在看教程之前需要下载阿chai提供的Demo：</p>
+<pre><code class="language-html">https://github.com/zihan987/Raspberry-Pi-Pico.git
+</code></pre>
+<p>下面是教程目录，小伙伴们根据自己的选择去浏览。</p>
+<p>一. 环境搭建与简介</p>
 <ul>
-<li>论文：https://arxiv.org/abs/2107.08430</li>
-<li>官方demo：https://github.com/Megvii-BaseDetection/YOLOX</li>
-<li>Tengine版：https://github.com/OAID/Tengine/blob/tengine-lite/examples/tm_yolox.cpp</li>
+<li>Pico开发环境搭建</li>
+<li>Pico硬件资源介绍</li>
 </ul>
-<p>TFLite、MNN版本的example以及ios上的测试APP私聊阿chai，嘿嘿。</p>
-<p>基于YOLOX的动态目标筛选是通过YOLOX检测到可能存在运动的元素，这些元素是优先设置到物体库中，例如人、其他机器人、手推车等。</p>
-<h3 id="3-光流法动态特征点筛选">3. 光流法动态特征点筛选</h3>
-<h4 id="31-lucas-kanade">3.1 Lucas-Kanade</h4>
-<p><img src="https://zihan987.github.io/post-images/1628599832250.png" alt="" loading="lazy"><br>
-Lucas–Kanade光流算法是两帧差分的光流估计算法，基于三个假设：</p>
+<p>二. 基础篇</p>
 <ul>
-<li>灰度不变性：像素的灰度值不会随着帧的跟踪改变。</li>
-<li>时间持续性：时间的变化不会引起像素位置的剧烈变化。</li>
-<li>空间一致性：场景中相同表面的相邻点具有相似的运动，并且其投影到图像平面上的距离也比较近。</li>
+<li>IO</li>
+<li>UART</li>
+<li>中断、定时器</li>
 </ul>
-<p>论文：http://cseweb.ucsd.edu/classes/sp02/cse252/lucaskanade81.pdf</p>
-<p>首先根据前两个光流的基本假设能得到图像的约束方程，然后进行泰勒展开，联立得到方程组。由于两个未知量所以无法求解，于是根据第三个基本假设设立新的方程带入，同时根据最小二乘策略处理方程组，求的速度矢量。</p>
-<p>这里不做有关光流法的详细公式推导，有兴趣的小伙伴可以去阅读paper。</p>
-<h4 id="32-运动一致性">3.2 运动一致性</h4>
-<p>通过光流法获取匹配的特征点对，并跟据匹配的特征点对计算基础矩阵。然后通过基础矩阵和特征点计算特征点对应的极线，当特征点到极线的距离大于一定值，即判断为动态特征点。</p>
-<p>一组匹配的特征点对<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">m_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>、<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">m_{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的齐次坐标为：</p>
-<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo fence="true">{</mo><mtable><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><msub><mi>m</mi><mn>1</mn></msub><mo>=</mo><mrow><mo fence="true">[</mo><msub><mi>u</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>v</mi><mn>1</mn></msub><mo separator="true">,</mo><mn>1</mn><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mrow><msub><mi>m</mi><mn>2</mn></msub><mo>=</mo><mrow><mo fence="true">[</mo><msub><mi>u</mi><mn>2</mn></msub><mo separator="true">,</mo><msub><mi>v</mi><mn>2</mn></msub><mo separator="true">,</mo><mn>1</mn><mo fence="true">]</mo></mrow></mrow></mstyle></mtd></mtr></mtable></mrow><annotation encoding="application/x-tex">\left\{\begin{array}{l}
-m_{1}=\left[u_{1}, v_{1}, 1\right] \\
-m_{2}=\left[u_{2}, v_{2}, 1\right]
-\end{array}\right.
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.40003em;vertical-align:-0.95003em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">{</span></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-l"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.45em;"><span style="top:-3.61em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">[</span><span class="mord"><span class="mord mathdefault">u</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">1</span><span class="mclose delimcenter" style="top:0em;">]</span></span></span></span><span style="top:-2.4099999999999997em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;">[</span><span class="mord"><span class="mord mathdefault">u</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">1</span><span class="mclose delimcenter" style="top:0em;">]</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9500000000000004em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
-<p><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>u</mi></mrow><annotation encoding="application/x-tex">u</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">u</span></span></span></span>、<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">v</span></span></span></span>是像素的横纵坐标。对于<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">m_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>，极线<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>为：</p>
-<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub><mo>=</mo><mrow><mo fence="true">[</mo><mtable><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi>X</mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi>Y</mi></mstyle></mtd></mtr><mtr><mtd><mstyle scriptlevel="0" displaystyle="false"><mi>Z</mi></mstyle></mtd></mtr></mtable><mo fence="true">]</mo></mrow><mo>=</mo><mi>H</mi><msub><mi>m</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}=\left[\begin{array}{c}
-X \\
-Y \\
-Z
-\end{array}\right]=H m_{1}
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.60004em;vertical-align:-1.55002em;"></span><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎣</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎡</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span><span class="mord"><span class="mtable"><span class="arraycolsep" style="width:0.5em;"></span><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05em;"><span style="top:-4.21em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span></span></span><span style="top:-3.0099999999999993em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span></span></span><span style="top:-1.8099999999999994em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.5500000000000007em;"><span></span></span></span></span></span><span class="arraycolsep" style="width:0.5em;"></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.05002em;"><span style="top:-2.2500000000000004em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎦</span></span></span><span style="top:-4.05002em;"><span class="pstrut" style="height:3.1550000000000002em;"></span><span class="delimsizinginner delim-size4"><span>⎤</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.55002em;"><span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord mathdefault" style="margin-right:0.08125em;">H</span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
-<p>其中<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.08125em;">H</span></span></span></span>代表着对应的基础矩阵，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">m_{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>到极线<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>L</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">L_{1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">L</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的距离<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi></mrow><annotation encoding="application/x-tex">d</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span></span></span></span>为：</p>
-<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi><mo>=</mo><mfrac><mrow><mo fence="true">∣</mo><msubsup><mi>m</mi><mn>2</mn><mi>T</mi></msubsup><mi>H</mi><msub><mi>m</mi><mn>1</mn></msub><mo fence="true">∣</mo></mrow><msqrt><mrow><mi mathvariant="normal">∥</mi><mi>X</mi><msup><mi mathvariant="normal">∥</mi><mn>2</mn></msup><mo>+</mo><mi mathvariant="normal">∥</mi><mi>Y</mi><msup><mi mathvariant="normal">∥</mi><mn>2</mn></msup></mrow></msqrt></mfrac></mrow><annotation encoding="application/x-tex">d=\frac{\left|m_{2}^{T} H m_{1}\right|}{\sqrt{\|X\|^{2}+\|Y\|^{2}}}
-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.7319999999999998em;vertical-align:-1.13em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.6019999999999999em;"><span style="top:-2.175em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.935em;"><span class="svg-align" style="top:-3.2em;"><span class="pstrut" style="height:3.2em;"></span><span class="mord" style="padding-left:1em;"><span class="mord">∥</span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mord"><span class="mord">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.740108em;"><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord">∥</span><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span><span class="mord"><span class="mord">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.740108em;"><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><span style="top:-2.8950000000000005em;"><span class="pstrut" style="height:3.2em;"></span><span class="hide-tail" style="min-width:1.02em;height:1.28em;"><svg width='400em' height='1.28em' viewBox='0 0 400000 1296' preserveAspectRatio='xMinYMin slice'><path d='M263,681c0.7,0,18,39.7,52,119c34,79.3,68.167,
-158.7,102.5,238c34.3,79.3,51.8,119.3,52.5,120c340,-704.7,510.7,-1060.3,512,-1067
-c4.7,-7.3,11,-11,19,-11H40000v40H1012.3s-271.3,567,-271.3,567c-38.7,80.7,-84,
-175,-136,283c-52,108,-89.167,185.3,-111.5,232c-22.3,46.7,-33.8,70.3,-34.5,71
-c-4.7,4.7,-12.3,7,-23,7s-12,-1,-12,-1s-109,-253,-109,-253c-72.7,-168,-109.3,
--252,-110,-252c-10.7,8,-22,16.7,-34,26c-22,17.3,-33.3,26,-34,26s-26,-26,-26,-26
-s76,-59,76,-59s76,-60,76,-60z M1001 80H40000v40H1012z'/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.30499999999999994em;"><span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.74001em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="minner"><span class="mopen"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.86199em;"><span style="top:-2.2559899999999997em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span><span style="top:-2.86199em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35000999999999993em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8413309999999999em;"><span style="top:-2.4518920000000004em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.24810799999999997em;"><span></span></span></span></span></span></span><span class="mord mathdefault" style="margin-right:0.08125em;">H</span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.86199em;"><span style="top:-2.2559899999999997em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span><span style="top:-2.86199em;"><span class="pstrut" style="height:2.606em;"></span><span class="delimsizinginner delim-size1"><span>∣</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35000999999999993em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.13em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
-<p>当距离大于一定值时<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>m</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">m_{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">m</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>为动态点。</p>
-<h3 id="4-误差分析">4. 误差分析</h3>
-<p>视觉里程计的评价标准需要看绝对误差与相对误差。为做误差分析，使用TUM数据集中无运动以及有运动的序列作为分析数据。<br>
-绝对轨迹误差：<br>
-<img src="https://zihan987.github.io/post-images/1628599903738.png" alt="" loading="lazy"><br>
-旋转相对误差：<br>
-<img src="https://zihan987.github.io/post-images/1628599910318.png" alt="" loading="lazy"><br>
-平移相对误差：<br>
-<img src="https://zihan987.github.io/post-images/1628599916542.png" alt="" loading="lazy"><br>
-经过测试，在运动目标的序列中动态目标的筛选会降低误差，在静态环境中效果几乎等同于ORB-SLAM。</p>
+<p>三. 进阶篇</p>
+<ul>
+<li>I2C</li>
+<li>SPI</li>
+</ul>
+<p>四. 高级篇</p>
+<ul>
+<li>ADC</li>
+<li>PWM</li>
+</ul>
+<p>五. 案例</p>
+<ul>
+<li>案例一：WS2812 LED</li>
+<li>案例二：姿态传感器</li>
+<li>案例三：温湿度传感器</li>
+</ul>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Tengine在GPU上支持CUDA/TensorRT加速啦]]></title>
-        <id>https://zihan987.github.io/post/tengine-zai-gpu-shang-zhi-chi-cudatensorrt-jia-su-la/</id>
-        <link href="https://zihan987.github.io/post/tengine-zai-gpu-shang-zhi-chi-cudatensorrt-jia-su-la/">
+        <title type="html"><![CDATA[姿态传感器]]></title>
+        <id>https://zihan987.github.io/post/zi-tai-chuan-gan-qi/</id>
+        <link href="https://zihan987.github.io/post/zi-tai-chuan-gan-qi/">
         </link>
-        <updated>2021-08-10T12:42:59.000Z</updated>
-        <summary type="html"><![CDATA[<p>Tengine框架在最近\支持了GPU上通过CUDA或TensorRT加速，那么今天阿chai就带着大家看看我们如何在NVIDIA的嵌入式设备中使用Tengine框架。今天的算法完全在嵌入式上进行，请小伙伴们自行学习有关LInux下开发的相关知识。</p>
+        <updated>2021-08-12T05:19:23.000Z</updated>
+        <summary type="html"><![CDATA[<p>平衡车、手机体感、旋翼无人机的平衡主要靠陀螺模组，MPU9250是一款常用的9轴姿态测量单元。MPU9250有两个内部时钟源，以及一个PLL。</p>
 ]]></summary>
-        <content type="html"><![CDATA[<p>Tengine框架在最近\支持了GPU上通过CUDA或TensorRT加速，那么今天阿chai就带着大家看看我们如何在NVIDIA的嵌入式设备中使用Tengine框架。今天的算法完全在嵌入式上进行，请小伙伴们自行学习有关LInux下开发的相关知识。</p>
+        <content type="html"><![CDATA[<p>平衡车、手机体感、旋翼无人机的平衡主要靠陀螺模组，MPU9250是一款常用的9轴姿态测量单元。MPU9250有两个内部时钟源，以及一个PLL。</p>
 <!-- more -->
-<h2 id="tengine-cuda">Tengine CUDA</h2>
 <table>
 <thead>
 <tr>
-<th>硬件平台</th>
-<th>Jetson Nano</th>
+<th>时钟源</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>CUDA</td>
-<td>10.0</td>
+<td>内部振荡器</td>
+<td>功耗低，但时钟精度略差</td>
 </tr>
 <tr>
-<td>TensorRT</td>
-<td>5.0</td>
-</tr>
-<tr>
-<td>cuDNN</td>
-<td>7.0</td>
+<td>X,Y或Z方向的Gyro</td>
+<td>MEMS时钟，功耗较高，但时钟精确（只要Gyro一经启用，就会使用该时钟源）</td>
 </tr>
 </tbody>
 </table>
-<p>如果是在不知道自己的版本，可以输入如下命令：</p>
-<pre><code># XXXX为查询的内容
-dpkg -l | grep xxxx
-</code></pre>
-<p>首先安装相关依赖：</p>
-<pre><code>sudo apt-get install cmake make g++ git
-</code></pre>
-<p>clone新的Tengien Lite Demo：</p>
-<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
-</code></pre>
-<p>设置NVCC的环境变量，NVCC的位置一般情况下在这：</p>
-<pre><code>export CUDACXX=/usr/local/cuda/bin/nvcc
-</code></pre>
-<p>建立编译文件夹并进入：</p>
-<pre><code>mkdir -p build-linux-cuda
-
-cd build-linux-cuda
-</code></pre>
-<p>cmake参数的文件路径一定要设置成自己的，如果不知道在哪里，可以根据下方的路径进行寻找。</p>
-<pre><code>cmake -DTENGINE_ENABLE_CUDABACKEND=ON \ -DCUDA_INCLUDE_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/include \ -DCUDA_LIBARAY_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/lib ..
-</code></pre>
-<p>编译：</p>
-<pre><code>make -j4
-
-make install
-</code></pre>
-<p>测试用的程序文件在如下路径中，为tm_classification_cuda</p>
-<pre><code>Tengine-Lite/build-linux-cuda/examples/
-</code></pre>
-<p>测试以MobileNet V1为例，测试的图片与模型可在如下链接中下载：</p>
-<pre><code>链接: https://pan.baidu.com/s/1Izm0RlLJvwTIkhfQ_NXg5Q  
-密码: faan
-</code></pre>
-<p>将模型预测师图片下载好导入嵌入式设备中并记住路径，输入如下命令进行测试，模型与图片的路径以自己设置的为准。</p>
-<pre><code>./tm_classification_cuda -m mobilenet_v1.tmfile -i dog.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
-</code></pre>
-<p>我们可以看到如下结果：</p>
-<pre><code>Tengine plugin allocator CUDA is registered.
-tengine-lite library version: 1.2-dev
-
-model file : mobilenet_v1.tmfile
-image file : dog.jpg
-img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
-Repeat 10 times, thread 1, avg time 35.95 ms, max_time 100.85 ms, min_time 19.96 ms
---------------------------------------
-22.900383, 537
-20.012611, 248
-18.909063, 249
-18.323162, 250
-14.298100, 174
---------------------------------------
-</code></pre>
-<p>同样我们可以输入如下命令测试纯CPU的推理速度：</p>
-<pre><code>./tm_classification -m mobilenet_v1.tmfile -i dog.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
-</code></pre>
-<p>CPU的推理速度是远远慢于CUDA加速的GPU推理。</p>
-<h2 id="tengine-tensorrt">Tengine TensorRT</h2>
+<p>时钟的选择需要综合平衡 时钟精度和功耗两个因素，所以从MPU9250的性能参数可以看到，一旦Gyro开启，功耗都是在mA级别，而加速度计和磁力计都是在uA级别的功耗。</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/MPU9250.jpeg?raw=true" alt="MPU9250.jpeg" loading="lazy"></figure>
+<p>电气元件：</p>
 <table>
 <thead>
 <tr>
-<th>硬件平台</th>
-<th><strong>Jetson AGX Xa****vier</strong></th>
+<th>元器件</th>
+<th>数量</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>CUDA</td>
-<td>10.2</td>
+<td>MPU9250</td>
+<td>1</td>
 </tr>
 <tr>
-<td>TensorRT</td>
-<td>7.2</td>
+<td>Raspberry Pi Pico</td>
+<td>1</td>
 </tr>
 <tr>
-<td>cuDNN</td>
-<td>7.6</td>
+<td>面包板</td>
+<td>1</td>
 </tr>
 </tbody>
 </table>
-<p>如果是在不知道自己的版本，可以输入如下命令：</p>
-<pre><code># XXXX为查询的内容
-dpkg -l | grep xxxx
-</code></pre>
-<p>首先安装相关依赖：</p>
-<pre><code>sudo apt-get install cmake make g++ git
-</code></pre>
-<p>clone新的Tengien Lite Demo：</p>
-<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
-</code></pre>
-<p>设置NVCC的环境变量，NVCC的位置一般情况下在这：</p>
-<pre><code>export CUDACXX=/usr/local/cuda/bin/nvcc
-</code></pre>
-<p>建立编译文件夹并进入：</p>
-<pre><code>mkdir -p build-linux-trt
+<p>电气接线图：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/mpu9250_spi_bb.png?raw=true" alt="mpu9250_spi_bb.png" loading="lazy"></figure>
+<p>demo：</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/spi.h&quot;
 
-cd build-linux-trt
-</code></pre>
-<p>cmake参数的比CUDA的要多一些，千万不要弄错。如果不知道在哪里，可以根据下方的路径进行寻找。</p>
-<pre><code>cmake -DTENGINE_ENABLE_TENSORRT=ON \ -DTENSORRT_INCLUDE_DIR=/usr/include/aarch64-linux-gnu \ -DTENSORRT_LIBRARY_DIR=/usr/lib/aarch64-linux-gnu \ -DCUDA_INCLUDE_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/include \ -DCUDA_LIBARAY_DIR=/usr/local/cuda-10.0/targets/aarch64-linux/lib ..
-</code></pre>
-<p>编译：</p>
-<pre><code>make -j4
+#define PIN_MISO 4
+#define PIN_CS   5
+#define PIN_SCK  6
+#define PIN_MOSI 7
 
-make install
-</code></pre>
-<p>测试用的程序文件在如下路径中，为tm_classification_trt</p>
-<pre><code>Tengine-Lite/build-linux-cuda/examples/
-</code></pre>
-<p>测试以MobileNet V1为例，测试的模型可在如下链接中下载：</p>
-<pre><code>链接: https://pan.baidu.com/s/1Izm0RlLJvwTIkhfQ_NXg5Q  
-密码: faan
-</code></pre>
-<p>将模型预测师图片下载好导入嵌入式设备中并记住路径，输入如下命令进行测试，模型与图片的路径以自己设置的为准。</p>
-<pre><code>./tm_classification_trt -m mobilenet_v1.tmfile -i cat.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
-</code></pre>
-<p>我们可以看到如下结果：</p>
-<pre><code>Tengine plugin allocator TRT is registered.
-tengine-lite library version: 1.2-dev
-Tengine: Try using inference precision TF32 failed, rollback.
+#define SPI_PORT spi0
+#define READ_BIT 0x80
 
-model file : mobilenet_v1.tmfile
-image file : cat.jpg
-img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
-Repeat 1 times, thread 1, avg time 2.91 ms, max_time 2.91 ms, min_time 2.91 ms
---------------------------------------
-8.574147, 282
-7.880117, 277
-7.812574, 278
-7.286457, 263
-6.357487, 281
---------------------------------------
+static inline void cs_select() {
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+    gpio_put(PIN_CS, 0);  // Active low
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+}
+
+static inline void cs_deselect() {
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+    gpio_put(PIN_CS, 1);
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+}
+
+static void mpu9250_reset() {
+    // Two byte reset. First byte register, second byte data
+    // There are a load more options to set up the device in different ways that could be added here
+    uint8_t buf[] = {0x6B, 0x00};
+    cs_select();
+    spi_write_blocking(SPI_PORT, buf, 2);
+    cs_deselect();
+}
+
+
+static void read_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
+
+    reg |= READ_BIT;
+    cs_select();
+    spi_write_blocking(SPI_PORT, &amp;reg, 1);
+    sleep_ms(10);
+    spi_read_blocking(SPI_PORT, 0, buf, len);
+    cs_deselect();
+    sleep_ms(10);
+}
+
+
+static void mpu9250_read_raw(int16_t accel[3], int16_t gyro[3], int16_t *temp) {
+    uint8_t buffer[6];
+
+    // Start reading acceleration registers from register 0x3B for 6 bytes
+    read_registers(0x3B, buffer, 6);
+
+    for (int i = 0; i &lt; 3; i++) {
+        accel[i] = (buffer[i * 2] &lt;&lt; 8 | buffer[(i * 2) + 1]);
+    }
+
+    // Now gyro data from reg 0x43 for 6 bytes
+    read_registers(0x43, buffer, 6);
+
+    for (int i = 0; i &lt; 3; i++) {
+        gyro[i] = (buffer[i * 2] &lt;&lt; 8 | buffer[(i * 2) + 1]);;
+    }
+
+    // Now temperature from reg 0x41 for 2 bytes
+    read_registers(0x41, buffer, 2);
+
+    *temp = buffer[0] &lt;&lt; 8 | buffer[1];
+}
+
+int main() {
+    stdio_init_all();
+
+    printf(&quot;Hello, MPU9250! Reading raw data from registers via SPI...\n&quot;);
+
+    // This example will use SPI0 at 0.5MHz.
+    spi_init(SPI_PORT, 500 * 1000);
+    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+
+    // Chip select is active-low, so we'll initialise it to a driven-high state
+    gpio_init(PIN_CS);
+    gpio_set_dir(PIN_CS, GPIO_OUT);
+    gpio_put(PIN_CS, 1);
+
+    mpu9250_reset();
+
+    // See if SPI is working - interrograte the device for its I2C ID number, should be 0x71
+    uint8_t id;
+    read_registers(0x75, &amp;id, 1);
+    printf(&quot;I2C address is 0x%x\n&quot;, id);
+
+    int16_t acceleration[3], gyro[3], temp;
+
+    while (1) {
+        mpu9250_read_raw(acceleration, gyro, &amp;temp);
+
+        // These are the raw numbers from the chip, so will need tweaking to be really useful.
+        // See the datasheet for more information
+        printf(&quot;Acc. X = %d, Y = %d, Z = %d\n&quot;, acceleration[0], acceleration[1], acceleration[2]);
+        printf(&quot;Gyro. X = %d, Y = %d, Z = %d\n&quot;, gyro[0], gyro[1], gyro[2]);
+        // Temperature is simple so use the datasheet calculation to get deg C.
+        // Note this is chip temperature.
+        printf(&quot;Temp. = %f\n&quot;, (temp / 340.0) + 36.53);
+
+        sleep_ms(100);
+    }
+
+    return 0;
+}
 </code></pre>
-<p>同样我们可以输入如下命令测试纯CPU的推理速度：</p>
-<pre><code>./tm_classification -m mobilenet_v1.tmfile -i cat.jpg -g 224,224 -s 0.017,0.017,0.017 -w 104.007,116.669,122.679 -r 10
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">add_executable(mpu9250_spi
+        mpu9250_spi.c
+        )
+
+# Pull in our (to be renamed) simple get you started dependencies
+target_link_libraries(mpu9250_spi pico_stdlib hardware_spi)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(mpu9250_spi)
+
+# add url via pico_set_program_url
+example_auto_set_url(mpu9250_spi)
 </code></pre>
-<p>CPU的推理速度是远远慢于CUDA加速的GPU推理。</p>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Tengine入门教程]]></title>
-        <id>https://zihan987.github.io/post/tengine-ru-men-jiao-cheng/</id>
-        <link href="https://zihan987.github.io/post/tengine-ru-men-jiao-cheng/">
+        <title type="html"><![CDATA[温湿度传感器]]></title>
+        <id>https://zihan987.github.io/post/wen-shi-du-chuan-gan-qi/</id>
+        <link href="https://zihan987.github.io/post/wen-shi-du-chuan-gan-qi/">
         </link>
-        <updated>2021-08-10T12:37:33.000Z</updated>
-        <summary type="html"><![CDATA[<p>Tengine-Lite框架是OpenAILAB公司出的适用于边缘设备面向芯片SoC优化的一款推理框架，主要甚至可以让人工智能模型在stm32这样的低功耗的单片机上运行，是由最早的Tengine框架衍生过来的。</p>
+        <updated>2021-08-12T05:18:27.000Z</updated>
+        <summary type="html"><![CDATA[<p>DHT11、DHT21系列的传感器小伙伴们一定很熟悉，单片机一接，写个小的APP，可以做个小型的室内温湿度监测系统。</p>
 ]]></summary>
-        <content type="html"><![CDATA[<p>Tengine-Lite框架是OpenAILAB公司出的适用于边缘设备面向芯片SoC优化的一款推理框架，主要甚至可以让人工智能模型在stm32这样的低功耗的单片机上运行，是由最早的Tengine框架衍生过来的。</p>
+        <content type="html"><![CDATA[<p>DHT11、DHT21系列的传感器小伙伴们一定很熟悉，单片机一接，写个小的APP，可以做个小型的室内温湿度监测系统。</p>
 <!-- more -->
-<pre><code>http://www.openailab.com/int/ability/list2.html
-</code></pre>
-<p>大多数学习过人工智能或者自己炼丹过的工程师，在模型出炉之后都会担心两个问题：</p>
-<ol>
-<li>我做的模型需要起码1080ti才能运行，这实际落地怎么办？</li>
-<li>炼丹用的python，这效率感人呀，但是C炼丹不会。</li>
-</ol>
-<p>Tengine-lite正好解决这两个问题，我们先看一下官网上的Tengine的系统架构，不管是模型优化以及各种加速单元的支持。</p>
-<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuIxraXd4IRiaGAGrGqZribAnTknFic2lV3RMLcNXL3kQmSWpe6fZ2pgeFHw/640?wx_fmt=jpeg" alt="img" loading="lazy"></figure>
-<h3 id="opencv的编译">opencv的编译</h3>
-<p>在安装Tengine框架前最好是编译一下OpenCV，有的demo是需要opencv的。具体OpenCV的介绍就不用多说了，宇宙第一计算机视觉算法库，我们先编译一下OpenCV。</p>
-<ol>
-<li>相关依赖的安装</li>
-</ol>
-<pre><code>sudo apt updatesudo apt-get gcc cmake gitsudo apt-get install build-essential libgtk2.0-dev libavcodec-dev libavformat-dev libjpeg.dev libtiff4.dev libswscale-devsudo libjasper-dev
-</code></pre>
-<p>2.下载源码并解压</p>
-<pre><code>wget https://github.com/opencv/opencv/archive/4.1.0.zipunzip 4.1.0.zip
-</code></pre>
-<p>3.编译opencv</p>
-<pre><code>cd opencv-4.1.0mkdir build &amp;&amp; cd buildcmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..make -j4sudo make install
-</code></pre>
-<p>4.环境变量以及pkgconfig设置(一定要sudo，要不会没有权限)：</p>
-<pre><code>sudo nano /etc/ld.so.conf.d/opencv.conf
-</code></pre>
-<p>打开后是个空白的文件，在文件的例输入如下指令并使用快捷键保存，nano的快捷键在terminal下面有提示。</p>
-<pre><code>/usr/local/lib
-</code></pre>
-<p>应用刚才配置后的设置：</p>
-<pre><code>sudo ldconfig
-</code></pre>
-<p>​     配置bash文件(一定要sudo，要不会没有权限)：</p>
-<pre><code>sudo nano /etc/bash.bashrc
-</code></pre>
-<p>输入如下指令并保存(pkgconfig的路径需要自己找一下可以用whereis pkgconfig来查询)：</p>
-<pre><code>PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig export PKG_CONFIG_PATH
-</code></pre>
-<p>应用配置并更新：</p>
-<pre><code>source /etc/bash.bashrcsudo updatedb
-</code></pre>
-<p>在完成后很多小伙伴可能出现使用pkg-config opencv <em>--modversion</em>时超不到opencv.pc文件的问题，主要原因有两个：</p>
-<ol>
-<li>刚才安装的是opencv4。</li>
-<li>opencv4.pc文件可能没有拷贝到pkg文件中。</li>
-</ol>
-<p>针对上述问题，我们可以使用如下步=步骤进行修改：</p>
-<pre><code>pkg-config opencv4 --modversionlocate opencv4.pcsudo cp -f 你的opencv4.pc的path /usr/lib/pkgconfig/
-</code></pre>
-<h3 id="tengine-lite的编译">Tengine-Lite的编译</h3>
-<p>在测试opencv没问题后我们进行tengine-lite的编译与安装，tengine-lite的编译安装是相对opencv容易一些。</p>
-<ol>
-<li>下载源码(一定要使用如下指令下载，因为lite暂时是分支)：</li>
-</ol>
-<pre><code>git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
-</code></pre>
-<p>2.编译tengine-lite：</p>
-<pre><code>cd Tengine-Litemkdir build cd buildcmake ..make -j4sudo make install
-</code></pre>
-<h3 id="benchmark">BenchMark</h3>
-<p>我们首先测试一下Benchmark，Benchmark是测试硬件运行神经网络的最好测试方法。我们首先确认/Tengine-Lite/benchmark/models路径中是否有benchmark的模型文件，如果存在，我们运行如下命令(mobilenet为例)：</p>
-<pre><code>./comvert_tm_tool -f caffe -p mobilenet_v1.prototxt -m mobilenet_v1.caffemodel -o mobilenet_v1_benchmark.tmfile
-</code></pre>
-<p>指令参数：</p>
-<pre><code>[Usage]:  [-h] [-r repeat_count] [-t thread_count] [-p cpu affinity, 0:auto, 1:big, 2:middle, 3:little] [-s net]
-</code></pre>
-<h3 id="retinaface测试">RetinaFace测试</h3>
-<p>接下来我们测试一下Retinaface的效果，我们首先需要准备好测试的图片和模型文件，整个tengine的模型文件在如下链接中，根据需求下载：</p>
-<pre><code>链接: https://pan.baidu.com/s/1YO9frM2TU4v9wWQ_0NGMTg  密码: 8d47
-</code></pre>
-<p>根据自己的结构目录输入测试指令：</p>
-<pre><code>./tm_retinaface -m 你的models_path/retinaface.tmfile -i 你的images_path/test4.jpg -r 1 -t 1
-</code></pre>
-<p>terminal出现时间以及box等信息：</p>
-<figure data-type="image" tabindex="2"><img src="https://mmbiz.qpic.cn/mmbiz_png/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuIWeFHNtTAQzFjnILqp1dfngrPH0CI4XJEaEz40qXn3I9b6o2Q435MxA/640?wx_fmt=png" alt="img" loading="lazy"></figure>
-<p>运行的结果如默认保存在build/examples文件中，可以根据自己的需求修改程序，结果下所示：</p>
-<figure data-type="image" tabindex="3"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdt1WEY5V2p9HwJLqPyJjuI0I8Vjp4tBFfFeNkUOeWghze6D7y97KllOKIpgp8hg5YwqdPEdX5vIA/640?wx_fmt=jpeg" alt="img" loading="lazy"></figure>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Tengine支持PaddlePaddle2.0啦]]></title>
-        <id>https://zihan987.github.io/post/tengine-zhi-chi-paddlepaddle20-la/</id>
-        <link href="https://zihan987.github.io/post/tengine-zhi-chi-paddlepaddle20-la/">
-        </link>
-        <updated>2021-08-10T12:35:00.000Z</updated>
-        <summary type="html"><![CDATA[<p>Tengine是非常优秀的深度学习推理框架，之前阿chai也出过很多Tengine的教程，今天我们介绍一下如何将PaddlePaddle2.0的模型转换Tengine。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>Tengine是非常优秀的深度学习推理框架，之前阿chai也出过很多Tengine的教程，今天我们介绍一下如何将PaddlePaddle2.0的模型转换Tengine。</p>
-<!-- more -->
-<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfdTpRaLnyIUQia7BZMqiazHp9GiaibpmF99bo4VLquSJ1Jf0PldSecOCBJWcpYkJmiaFcp0zZQ2CVBzDtg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></figure>
-<p>如果对Tengine不了解的可以看阿柴之前写的教程：</p>
-<ul>
-<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247483767&amp;idx=1&amp;sn=d2536c4d481278bdae2af1df9190ea43&amp;chksm=e8fdbe29df8a373f25ad5a44ae29ce9b1460e3ebdfd4ca15a0223af621eef9659f2f3065d10e&amp;scene=21#wechat_redirect">面向芯片的推理框架Tengine-Lite</a></li>
-<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247486235&amp;idx=1&amp;sn=9e5818eb60ecc0ef7976ce4feeeb3799&amp;chksm=e8fdb445df8a3d5382163abaae7c15ed3f59406ed713a5437023ca234a7fb7c557d6a7867c09&amp;scene=21#wechat_redirect">Khadas VIM3上进行Tengine模型推理</a></li>
-<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247485908&amp;idx=1&amp;sn=848793deed0ceec65c679fd1963f9da0&amp;chksm=e8fdb68adf8a3f9c5794626fa43c34632f38ea9eea35e8a9de467f46fa3d64ef22fd70ff716c&amp;scene=21#wechat_redirect">Tengine在GPU上支持CUDA/TensorRT加速啦</a></li>
-<li><a href="http://mp.weixin.qq.com/s?__biz=MzIzNDAwNzA4OQ==&amp;mid=2247486258&amp;idx=1&amp;sn=5aad6a94cb057650f17df55ecf4fd72f&amp;chksm=e8fdb46cdf8a3d7a9ab7fa923bd639b5bf558e810e598518c26b953275f4f84fb29248199123&amp;scene=21#wechat_redirect">Tengine 支持 NPU 模型部署-YOLOv5s</a></li>
-</ul>
-<p>本文参考圈圈虫大佬的Tengine 支持 PaddlePaddle 模型部署。</p>
-<h3 id="动态图与计算图">动态图与计算图</h3>
-<p>百度的PadddlePaddle2.0支持了非常好用的动态图：</p>
-<p>(1)动态图: 运算和图结构搭建同时进行，主要特点为灵活、便于修改</p>
-<p>(2)静态图: 先搭建图结构，后进行运算，主要特点为效率高、不好改</p>
-<p>但是如果将深度学习模型部署的话计算图会好一些。</p>
-<p>PaddlePaddle计算图的CNN：</p>
-<pre><code>import paddle.fluid as f
-import numpy as np
-
-data = f.layers.data(name='data', shape=[3, 32, 32], dtype='float32')
-param_attr = f.ParamAttr(name='conv2d.weight', initializer=f.initializer.Xavier(uniform=False), learning_rate=0.001)
-
-res = f.layers.conv2d(input=data, num_filters=2, filter_size=3, act=&quot;relu&quot;, param_attr=param_attr)
-
-place = f.CPUPlace()
-exe = f.Executor(place)
-exe.run(f.default_startup_program())
-
-x = np.random.rand(1, 3, 32, 32).astype(&quot;float32&quot;)
-
-res_output = exe.run(feed={&quot;data&quot;: x}, fetch_list=[res])
-</code></pre>
-<p>PaddlePaddle 动态图CNN：</p>
-<pre><code>from paddle.fluid.dygraph.base import to_variable
-import paddle.fluid as f
-from paddle.fluid.dygraph import Conv2D
-import numpy as np
-
-x = np.random.rand(1, 3, 32, 32).astype(&quot;float32&quot;)
-
-with f.dygraph.guard():
-    conv2d = Conv2D(num_channels=3,
-                    num_filters=2,
-                    filter_size=3,
-                    act='relu')
-    data = to_variable(x)
-    conv = conv2d(data)
-</code></pre>
-<h3 id="环境准备">环境准备</h3>
-<p>先放上阿chai的测试环境：</p>
+<p>材料清单：</p>
 <table>
 <thead>
 <tr>
-<th style="text-align:left">设备</th>
-<th style="text-align:left">操作系统</th>
-<th style="text-align:left">内存</th>
+<th>元器件名称</th>
+<th>数量</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left">CPU云服务器(2核)</td>
-<td style="text-align:left">Ubuntu18.0.4</td>
-<td style="text-align:left">4G</td>
+<td>DHT11</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Respberry Pi Pico</td>
+<td>1</td>
+</tr>
+<tr>
+<td>10k电阻</td>
+<td>1</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>1</td>
 </tr>
 </tbody>
 </table>
-<p>1.安装PaddlePaddle：</p>
-<pre><code>pip3 install paddlepaddle --upgrade -i https://mirror.baidu.com/pypi/simple
+<p>电气接线图：</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/pi-and-pico-uart-and-dht-sensor.png?raw=true" alt="pi-and-pico-uart-and-dht-sensor.png" loading="lazy"></figure>
+<p>Demo:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;math.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/gpio.h&quot;
+
+const uint LED_PIN = PICO_DEFAULT_LED_PIN;
+const uint DHT_PIN = 15;
+const uint MAX_TIMINGS = 85;
+
+typedef struct {
+    float humidity;
+    float temp_celsius;
+} dht_reading;
+
+void read_from_dht(dht_reading *result);
+
+int main() {
+    stdio_init_all();
+    gpio_init(LED_PIN);
+    gpio_init(DHT_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+    while (1) {
+        dht_reading reading;
+        read_from_dht(&amp;reading);
+        float fahrenheit = (reading.temp_celsius * 9 / 5) + 32;
+        printf(&quot;Humidity = %.1f%%, Temperature = %.1fC (%.1fF)\n&quot;,
+               reading.humidity, reading.temp_celsius, fahrenheit);
+
+        sleep_ms(2000);
+    }
+}
+
+void read_from_dht(dht_reading *result) {
+    int data[5] = {0, 0, 0, 0, 0};
+    uint last = 1;
+    uint j = 0;
+
+    gpio_set_dir(DHT_PIN, GPIO_OUT);
+    gpio_put(DHT_PIN, 0);
+    sleep_ms(20);
+    gpio_set_dir(DHT_PIN, GPIO_IN);
+
+    gpio_put(LED_PIN, 1);
+    for (uint i = 0; i &lt; MAX_TIMINGS; i++) {
+        uint count = 0;
+        while (gpio_get(DHT_PIN) == last) {
+            count++;
+            sleep_us(1);
+            if (count == 255) break;
+        }
+        last = gpio_get(DHT_PIN);
+        if (count == 255) break;
+
+        if ((i &gt;= 4) &amp;&amp; (i % 2 == 0)) {
+            data[j / 8] &lt;&lt;= 1;
+            if (count &gt; 16) data[j / 8] |= 1;
+            j++;
+        }
+    }
+    gpio_put(LED_PIN, 0);
+
+    if ((j &gt;= 40) &amp;&amp; (data[4] == ((data[0] + data[1] + data[2] + data[3]) &amp; 0xFF))) {
+        result-&gt;humidity = (float) ((data[0] &lt;&lt; 8) + data[1]) / 10;
+        if (result-&gt;humidity &gt; 100) {
+            result-&gt;humidity = data[0];
+        }
+        result-&gt;temp_celsius = (float) (((data[2] &amp; 0x7F) &lt;&lt; 8) + data[3]) / 10;
+        if (result-&gt;temp_celsius &gt; 125) {
+            result-&gt;temp_celsius = data[2];
+        }
+        if (data[2] &amp; 0x80) {
+            result-&gt;temp_celsius = -result-&gt;temp_celsius;
+        }
+    } else {
+        printf(&quot;Bad data\n&quot;);
+    }
+}
 </code></pre>
-<p>2.安装paddleclas：</p>
-<pre><code>git clone https://github.com/PaddlePaddle/PaddleClas.git
+<p>CMakelist.txt:</p>
+<pre><code class="language-cmake">add_executable(dht
+        dht.c
+        )
 
-# 安装依赖
-pip3 install --upgrade -r requirements.txt -i https://mirror.baidu.com/pypi/simple
+target_link_libraries(dht pico_stdlib)
+
+pico_add_extra_outputs(dht)
+
+# add url via pico_set_program_url
+example_auto_set_url(dht)
 </code></pre>
-<p>requirements.txt中的gast建议安装成0.3.3的版本：</p>
-<pre><code>pip3 install gast==0.3.3 -i http://pypi.douban.com/simple/
-</code></pre>
-<p>3.编译Tengine-Convert-Tools:</p>
-<pre><code>sudo apt install libprotobuf-dev protobuf-compiler
-
-git clone  https://github.com/OAID/Tengine-Convert-Tools.git
-
-mkdir build &amp;&amp; cd build
-cmake .. &amp;&amp; make
-</code></pre>
-<p>4.编译Tengine：</p>
-<pre><code>sudo apt-get install cmake make g++ git
-
-git clone -b tengine-lite https://github.com/OAID/Tengine.git  Tengine-Lite
-
-cd Tengine-Lite
-mkdir build 
-cd build
-cmake ..
-make -j2
-make install
-</code></pre>
-<p>如果出现CMake版本太低，因为经常有使用国内镜像的，所以可能会出现cmake版本低的情况，这里我附上版本3.20.0的安装方式。</p>
-<pre><code>wget https://cmake.org/files/v3.20/cmake-3.20.0-rc4-linux-x86_64.tar.gz
-
-tar -zxvf cmake-3.12.2-Linux-x86_64.tar.gz
-
-#在环境变量中添加export PATH=$PATH:/home/username/filepath/cmake-3.12.2-Linux-x86_64/bin
-
-source ~/.bashrc 
-
-chmod 777 cmake ccmake cmake-gui cpack ctest
-</code></pre>
-<h3 id="模型转换">模型转换</h3>
-<p>1.下载模型：</p>
-<pre><code>wget https://link.zhihu.com/?target=https%3A//paddle-imagenet-models-name.bj.bcebos.com/dygraph/MobileNetV2_pretrained.pdparams
-</code></pre>
-<p>2.依托动态图转换为计算图：</p>
-<pre><code>python3 tools/export_model.py --model MobileNetV2 --pretrained_model ./output/MobileNetV2_pretrained --output_path ./inference --class_dim 1000
-</code></pre>
-<p>静态图的模型文件存放在 inference 目录下，包含以下三个文件：</p>
+<p>终端的输出如下：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/DHT1.jpg?raw=true" alt="DHT1.jpg" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[WS2812 LED]]></title>
+        <id>https://zihan987.github.io/post/ws2812-led/</id>
+        <link href="https://zihan987.github.io/post/ws2812-led/">
+        </link>
+        <updated>2021-08-12T05:17:50.000Z</updated>
+        <summary type="html"><![CDATA[<p>WS2812 LED是一种全彩的LED，我们平时看到的很多彩灯以及点阵就是这样的，因此第一个实践案例用来做这个真的不错。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>WS2812 LED是一种全彩的LED，我们平时看到的很多彩灯以及点阵就是这样的，因此第一个实践案例用来做这个真的不错。</p>
+<!-- more -->
+<p>电气接线图：</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/WSB2.png?raw=true" alt="WSB2.png" loading="lazy"></figure>
+<p>材料清单：</p>
 <table>
 <thead>
 <tr>
-<th style="text-align:left">文件名</th>
-<th style="text-align:left">说明</th>
+<th>元器件</th>
+<th>数量</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left">inference.pdmodel</td>
-<td style="text-align:left">网络结构文件，类似 Caffe 的 prototxt 文件，用于保存 graph 中 node 间连接关系，可以用 Netron 打开进行可视化。</td>
+<td>Raspberry Pi Pico</td>
+<td>1</td>
 </tr>
 <tr>
-<td style="text-align:left">inference.pdiparams</td>
-<td style="text-align:left">网络参数文件，类似 Caffe 的 caffemodel 文件，用于保存 weight、bias 等参数数据。</td>
+<td>WS2812 LED</td>
+<td>1</td>
 </tr>
 <tr>
-<td style="text-align:left">http://inference.pdiparams.info</td>
-<td style="text-align:left">临时文件，据说重训练时会用到 ？？？</td>
+<td>面包板</td>
+<td>1</td>
 </tr>
 </tbody>
 </table>
-<p>3.转换为tmfile：</p>
-<pre><code># 路径设置成自己的
-./convert_tool -f paddle -p inference.pdmodel -m inference.pdiparams -o mobilenetv2_paddle.tmfile
-</code></pre>
-<h3 id="测试">测试</h3>
-<pre><code>./tm_classification -m /root/Desktop/Paddle2/mobilenetv2_paddle.tmfile -i /root/Desktop/Paddle2/cat.jpeg -g 224,224 -s 0.017,0.017,0.017 -r 10
-Mean value not specified, use default   104.0, 116.7, 122.7
-tengine-lite library version: 1.4-dev
+<p>demo程序：</p>
+<pre><code class="language-python">import array, time
+from machine import Pin
+import rp2
 
-model file : /root/Desktop/Paddle2/mobilenetv2_paddle.tmfile
-image file : /root/Desktop/Paddle2/cat.jpeg
-img_h, img_w, scale[3], mean[3] : 224 224 , 0.017 0.017 0.017, 104.0 116.7 122.7
-Repeat 10 times, thread 1, avg time 46.50 ms, max_time 51.41 ms, min_time 44.26 ms
---------------------------------------
-0.317292, 281
-0.176262, 285
-0.154328, 282
-0.039242, 287
-0.029589, 278
---------------------------------------
+# Configure the number of WS2812 LEDs.
+NUM_LEDS = 16
+PIN_NUM = 6
+brightness = 0.2
+
+@rp2.asm_pio(sideset_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_LEFT, autopull=True, pull_thresh=24)
+def ws2812():
+    T1 = 2
+    T2 = 5
+    T3 = 3
+    wrap_target()
+    label(&quot;bitloop&quot;)
+    out(x, 1)               .side(0)    [T3 - 1]
+    jmp(not_x, &quot;do_zero&quot;)   .side(1)    [T1 - 1]
+    jmp(&quot;bitloop&quot;)          .side(1)    [T2 - 1]
+    label(&quot;do_zero&quot;)
+    nop()                   .side(0)    [T2 - 1]
+    wrap()
+
+
+# Create the StateMachine with the ws2812 program, outputting on pin
+sm = rp2.StateMachine(0, ws2812, freq=8_000_000, sideset_base=Pin(PIN_NUM))
+
+# Start the StateMachine, it will wait for data on its FIFO.
+sm.active(1)
+
+# Display a pattern on the LEDs via an array of LED RGB values.
+ar = array.array(&quot;I&quot;, [0 for _ in range(NUM_LEDS)])
+
+##########################################################################
+def pixels_show():
+    dimmer_ar = array.array(&quot;I&quot;, [0 for _ in range(NUM_LEDS)])
+    for i,c in enumerate(ar):
+        r = int(((c &gt;&gt; 8) &amp; 0xFF) * brightness)
+        g = int(((c &gt;&gt; 16) &amp; 0xFF) * brightness)
+        b = int((c &amp; 0xFF) * brightness)
+        dimmer_ar[i] = (g&lt;&lt;16) + (r&lt;&lt;8) + b
+    sm.put(dimmer_ar, 8)
+    time.sleep_ms(10)
+
+def pixels_set(i, color):
+    ar[i] = (color[1]&lt;&lt;16) + (color[0]&lt;&lt;8) + color[2]
+
+def pixels_fill(color):
+    for i in range(len(ar)):
+        pixels_set(i, color)
+
+def color_chase(color, wait):
+    for i in range(NUM_LEDS):
+        pixels_set(i, color)
+        time.sleep(wait)
+        pixels_show()
+    time.sleep(0.2)
+ 
+def wheel(pos):
+    # Input a value 0 to 255 to get a color value.
+    # The colours are a transition r - g - b - back to r.
+    if pos &lt; 0 or pos &gt; 255:
+        return (0, 0, 0)
+    if pos &lt; 85:
+        return (255 - pos * 3, pos * 3, 0)
+    if pos &lt; 170:
+        pos -= 85
+        return (0, 255 - pos * 3, pos * 3)
+    pos -= 170
+    return (pos * 3, 0, 255 - pos * 3)
+ 
+ 
+def rainbow_cycle(wait):
+    for j in range(255):
+        for i in range(NUM_LEDS):
+            rc_index = (i * 256 // NUM_LEDS) + j
+            pixels_set(i, wheel(rc_index &amp; 255))
+        pixels_show()
+        time.sleep(wait)
+
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+YELLOW = (255, 150, 0)
+GREEN = (0, 255, 0)
+CYAN = (0, 255, 255)
+BLUE = (0, 0, 255)
+PURPLE = (180, 0, 255)
+WHITE = (255, 255, 255)
+COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
+
+print(&quot;fills&quot;)
+for color in COLORS:       
+    pixels_fill(color)
+    pixels_show()
+    time.sleep(0.2)
+
+print(&quot;chases&quot;)
+for color in COLORS:       
+    color_chase(color, 0.01)
+
+print(&quot;rainbow&quot;)
+rainbow_cycle(0)
 </code></pre>
-<p>上面是阿chai测试的结果。</p>
+<p>效果：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/wsb1.png?raw=true" alt="wsb1.png" loading="lazy"></figure>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Tengine 支持 NPU 模型部署-YOLOv5s]]></title>
-        <id>https://zihan987.github.io/post/tengine-zhi-chi-npu-mo-xing-bu-shu-yolov5s/</id>
-        <link href="https://zihan987.github.io/post/tengine-zhi-chi-npu-mo-xing-bu-shu-yolov5s/">
+        <title type="html"><![CDATA[PWM]]></title>
+        <id>https://zihan987.github.io/post/pwm/</id>
+        <link href="https://zihan987.github.io/post/pwm/">
         </link>
-        <updated>2021-08-10T12:28:44.000Z</updated>
-        <summary type="html"><![CDATA[<p>Tengine 支持 NPU 模型部署-YOLOv5s</p>
+        <updated>2021-08-12T05:16:26.000Z</updated>
+        <summary type="html"><![CDATA[<p>脉冲宽度调制是一种模拟控制方式，根据相应载荷的变化来调制晶体管基极或MOS管栅极的偏置，来实现晶体管或MOS管导通时间的改变，从而实现开关稳压电源输出的改变。这种方式能使电源的输出电压在工作条件变化时保持恒定，是利用微处理器的数字信号对模拟电路进行控制的一种非常有效的技术。</p>
 ]]></summary>
-        <content type="html"><![CDATA[<p>Tengine 支持 NPU 模型部署-YOLOv5s</p>
+        <content type="html"><![CDATA[<p>脉冲宽度调制是一种模拟控制方式，根据相应载荷的变化来调制晶体管基极或MOS管栅极的偏置，来实现晶体管或MOS管导通时间的改变，从而实现开关稳压电源输出的改变。这种方式能使电源的输出电压在工作条件变化时保持恒定，是利用微处理器的数字信号对模拟电路进行控制的一种非常有效的技术。</p>
 <!-- more -->
-<p>本文来自OpenAILab的圈圈虫大佬(四大卷王之一)。大佬擅长C/C++开发，人工智能算法的部署与模型推理。</p>
-<p>原文链接：https://zhuanlan.zhihu.com/p/360138163</p>
-<p>YOLOv5 自从问世以来，让多目标检测任务在速度和精度上都达到了非常好的表现效果。</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQYUGG2ZZxs4icbJibIcA0TBICTicL8ICS8KprFd8qrPo0MkQoBIUPjzsOA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
-<p>今天我们试着基于 AI 边缘计推理框架 Tengine 在 Khadas VIM3 的 AI 加速器上部署 YOLOv5s。</p>
-<h2 id="准备-yolov5s-模型">准备 YOLOv5s 模型</h2>
-<p>我们选取 github 开源项目中预训练好的 YOLOv5s onnx 版本的模型。</p>
-<p>github.com/ultralytics/yolov5/releasesgithub.com</p>
-<p><strong>Focus结构</strong></p>
-<p>Focus 是 YOLOv5 新增的操作，将原始 3<em>640</em>640 的图像输入 Focus 结构，采用切片操作，输出 12<em>320</em>320 的特征图，再送入后续卷积神经网络。</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQhwUb0ZAict8UgmGRexTGQsUw0JUE7mX6L54AwrV5KFMaVHu0HGVAgLg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Focus 降维处理？</p>
-<p><strong>HardSwish</strong></p>
-<p>YOLOv5s 中卷积之后的激活操作由 YOLOv4 的 mish 换成了另一种奇怪的 HardSwish：</p>
-<figure data-type="image" tabindex="1"><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQBh3SzibKXvZlj2lWmknVDqf6dcM7jS6hzYTI7T6q57eFwvLJQHKUFzg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></figure>
-<p>看一眼就知道在 NPU 上效率不太行</p>
-<p>原始的 PyTorch 使用 ONNX 转出后是这样的：</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQSY15dsatWhXEfjjdMXod7IccPeKCYE46ZcA3Iibqt0I25icQ4yTq7CaQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">这就更离谱了，被 ONNX 打散了！</p>
-<p>本次使用的 YOLOv5s 预训练好提供的 ONNX 模型中是这样的：</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQj0bc7RBE1zcjUDlHzyvZWrhic8hZvvjGibx1xgDu8MS3QktKYxvufswA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">对于 NPU君 来说，还是太难了</p>
-<p>而对于 NPU 来讲，<strong>她~喜欢</strong>这样的：</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQnpdM1bEZG76hZewRhSxgrVXzIoHLCA4TG3fTLeSohshicRKZ3R3eFhA/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
-<p>反正全网找了一圈，没有找到完整的 HardSwish OP，为什么会这样呢？询问过 ONNX 官方“十八罗汉” 之一 大老师 给的<strong>非官方答复</strong>是“你们自己想办法<strong>捏回去</strong>吧！因为 ONNX 标准 OP 中没有这个 HardSwish OP......”</p>
-<p><strong>YOLOv5s 的后处理结构</strong></p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQaeVhRmtVyM44xWo2HzJqJHO2t7PVl57zRgDBLrvibx55yDxBmncyekg/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">好大一坨，大概率 NPU 也搞不定</p>
-<h2 id="模型优化">模型优化</h2>
-<p>当虫叔想放弃的时候，<strong>星大师</strong> 过来瞅了一眼，说道：</p>
-<blockquote>
-<p>简单！写个 python 脚本而已，分分钟的事情。</p>
-</blockquote>
-<p>Focus、Hardswish、Postprocess 的非常规计算对于边缘计算设备，特别是需要量化操作的 NPU 芯片来说，在速度和精度上未知数太多了。</p>
-<p>因此，我们提供了一个 python脚本（文末提供传送门），<strong>一键</strong>完成以下姿势：</p>
-<ul>
-<li>Focus 裁减；</li>
-<li>Postprocess 裁减；</li>
-<li>HardSwish 合并（针对 sigmod + mul 组合）</li>
-</ul>
-<p>关键函数（虫叔 python 不精通，但是精通C/C++，轻喷~）</p>
-<pre><code>def cut_focus_output(input_node, in_name, out_name, out_num):
-    &quot;&quot;&quot;
-    cut the focus and postprocess nodes
-    Args:
-        input_node: input_node: the nodes of ONNX model
-        in_name:    input cut node name
-        out_name:   output cut node names
-        out_num:    output num
-    Returns:
-        new_nodes:  the new node
-    &quot;&quot;&quot;     
-    node_dict = {}
-    for i in range(len(input_node)):
-        node_dict[input_node[i].output[0]] = i
+<h3 id="micropython">MicroPython</h3>
+<pre><code class="language-python">import time
+from machine import Pin, PWM
+
+
+# Construct PWM object, with LED on Pin(25).
+pwm = PWM(Pin(25))
+
+# Set the PWM frequency.
+pwm.freq(1000)
+
+# Fade the LED in and out a few times.
+duty = 0
+direction = 1
+for _ in range(8 * 256):
+    duty += direction
+    if duty &gt; 255:
+        duty = 255
+        direction = -1
+    elif duty &lt; 0:
+        duty = 0
+        direction = 1
+    pwm.duty_u16(duty * duty)
+    time.sleep(0.001)
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>以呼吸灯为例，LED为核心板上的。</p>
+<pre><code class="language-c">#include &quot;pico/stdlib.h&quot;
+#include &lt;stdio.h&gt;
+#include &quot;pico/time.h&quot;
+#include &quot;hardware/irq.h&quot;
+#include &quot;hardware/pwm.h&quot;
+
+void on_pwm_wrap() {
+    static int fade = 0;
+    static bool going_up = true;
+    // Clear the interrupt flag that brought us here
+    pwm_clear_irq(pwm_gpio_to_slice_num(PICO_DEFAULT_LED_PIN));
+
+    if (going_up) {
+        ++fade;
+        if (fade &gt; 255) {
+            fade = 255;
+            going_up = false;
+        }
+    } else {
+        --fade;
+        if (fade &lt; 0) {
+            fade = 0;
+            going_up = true;
+        }
+    }
+    // Square the fade value to make the LED's brightness appear more linear
+    // Note this range matches with the wrap value
+    pwm_set_gpio_level(PICO_DEFAULT_LED_PIN, fade * fade);
+}
+
+int main() {
+    // Tell the LED pin that the PWM is in charge of its value.
+    gpio_set_function(PICO_DEFAULT_LED_PIN, GPIO_FUNC_PWM);
+    // Figure out which slice we just connected to the LED pin
+    uint slice_num = pwm_gpio_to_slice_num(PICO_DEFAULT_LED_PIN);
+
+    pwm_clear_irq(slice_num);
+    pwm_set_irq_enabled(slice_num, true);
+    irq_set_exclusive_handler(PWM_IRQ_WRAP, on_pwm_wrap);
+    irq_set_enabled(PWM_IRQ_WRAP, true);
+
+    // counter is allowed to wrap over its maximum range (0 to 2**16-1)
+    pwm_config config = pwm_get_default_config();
+    // Set divider, reduces counter clock to sysclock/this value
+    pwm_config_set_clkdiv(&amp;config, 4.f);
+    // Load the configuration into our PWM slice, and set it running.
+    pwm_init(slice_num, &amp;config, true);
+
+    while (1)
+        tight_loop_contents();
+}
+
+</code></pre>
+<p>CMakeList.txt:</p>
+<pre><code class="language-cmake">add_executable(pwm_led_fade
+        pwm_led_fade.c
+        )
+
+# Pull in our pico_stdlib which pulls in commonly used features
+target_link_libraries(pwm_led_fade pico_stdlib hardware_pwm)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(pwm_led_fade)
+
+# add url via pico_set_program_url
+example_auto_set_url(pwm_led_fade)
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[ADC]]></title>
+        <id>https://zihan987.github.io/post/adc/</id>
+        <link href="https://zihan987.github.io/post/adc/">
+        </link>
+        <updated>2021-08-12T05:15:36.000Z</updated>
+        <summary type="html"><![CDATA[<p>模拟数字转换器即A/D转换器，或简称ADC，通常是指一个将模拟信号转变为数字信号的电子元件。通常的模数转换器是将一个输入电压信号转换为一个输出的数字信号。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>模拟数字转换器即A/D转换器，或简称ADC，通常是指一个将模拟信号转变为数字信号的电子元件。通常的模数转换器是将一个输入电压信号转换为一个输出的数字信号。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<pre><code class="language-python">import machine
+import utime
+
+sensor_temp = machine.ADC(4)
+conversion_factor = 3.3 / (65535)
+
+while True:
+    reading = sensor_temp.read_u16() * conversion_factor
     
-    # cut output nodes
-    output_pass = np.zeros((len(input_node)), dtype=np.int)
-    for i in range(out_num):
-        output_pass[node_dict[out_name[i]]] = 2
-
-    for i in range(len(input_node)):
-        for j in input_node[i].input:
-            if j in node_dict:
-                if output_pass[node_dict[j]] == 2 or output_pass[node_dict[j]] == 1:
-                    output_pass[node_dict[input_node[i].output[0]]] = 1
-
-    # cut focus node
-    for i in range(len(output_pass)-1, -1, -1):
-        if output_pass[i] == 1:
-            del input_node[i]
-            
-    new_nodes = input_node[(node_dict[in_name] + 1):]
-
-    return new_nodes
-
-
-def fusion_hardswish(input_node):
-    &quot;&quot;&quot;
-    using HardSwish replace the Sigmoid and Mul
-    Args:
-        input_node: the nodes of ONNX model
-    Returns:
-        the new node
-    &quot;&quot;&quot;     
-    del_list = []
-    for i in range(len(input_node) - 1):
-        if(input_node[i].op_type == 'Sigmoid' and input_node[i+1].op_type == 'Mul'):
-            input_node[i].output[0] = input_node[i+1].output[0]
-            input_node[i].op_type = 'HardSwish'
-            del_list.append(i + 1)
-
-    for i in range(len(del_list)-1, -1, -1):
-        del input_node[del_list[i]]
-
-    return input_node
+    # The temperature sensor measures the Vbe voltage of a biased bipolar diode, connected to the fifth ADC channel
+    # Typically, Vbe = 0.706V at 27 degrees C, with a slope of -1.721mV (0.001721) per degree. 
+    temperature = 27 - (reading - 0.706)/0.001721
+    print(temperature)
+    utime.sleep(2)
 </code></pre>
-<p>优化前后的 onnx 模型可视化结果，可以参考这里面的对比（图片有点大）</p>
-<p>OAID/Tenginegithub.com<img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQ4eNVLhYe8MAa7concUo83ztZZ8AUjdWCVOv2KWaOzMHtXVrEHxKYuQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></p>
-<h2 id="khadas-vim3-介绍">Khadas VIM3 介绍</h2>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQNwt7Wffl0Y7iaNhND8hgmfSicJHCzHmGcrP3GDWCGaG0pyib3J9WbduAw/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">img</p>
-<p>前面几篇文章已经介绍了很多了，主要是采用 TIM-VX 对接其 5Tops 的 AI 加速器。当然，相同的方案理论上支持以下平台。</p>
+<h3 id="cc">C/C++</h3>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/adc.h&quot;  // For ADC input:
+#include &quot;hardware/dma.h&quot;
+
+#include &quot;pico/multicore.h&quot;// For resistor DAC output:
+#include &quot;hardware/pio.h&quot;
+#include &quot;resistor_dac.pio.h&quot;
+
+// Channel 0 is GPIO26
+#define CAPTURE_CHANNEL 0
+#define CAPTURE_DEPTH 1000
+
+uint8_t capture_buf[CAPTURE_DEPTH];
+
+void core1_main();
+
+int main() {
+    stdio_init_all();
+
+    // Send core 1 off to start driving the &quot;DAC&quot; whilst we configure the ADC.
+    multicore_launch_core1(core1_main);
+
+    // Init GPIO for analogue use: hi-Z, no pulls, disable digital input buffer.
+    adc_gpio_init(26 + CAPTURE_CHANNEL);
+
+    adc_init();
+    adc_select_input(CAPTURE_CHANNEL);
+    adc_fifo_setup(
+        true,    // Write each completed conversion to the sample FIFO
+        true,    // Enable DMA data request (DREQ)
+        1,       // DREQ (and IRQ) asserted when at least 1 sample present
+        false,   // We won't see the ERR bit because of 8 bit reads; disable.
+        true     // Shift each sample to 8 bits when pushing to FIFO
+    );
+
+    adc_set_clkdiv(0);
+
+    printf(&quot;Arming DMA\n&quot;);
+    sleep_ms(1000);
+    // Set up the DMA to start transferring data as soon as it appears in FIFO
+    uint dma_chan = dma_claim_unused_channel(true);
+    dma_channel_config cfg = dma_channel_get_default_config(dma_chan);
+
+    // Reading from constant address, writing to incrementing byte addresses
+    channel_config_set_transfer_data_size(&amp;cfg, DMA_SIZE_8);
+    channel_config_set_read_increment(&amp;cfg, false);
+    channel_config_set_write_increment(&amp;cfg, true);
+
+    // Pace transfers based on availability of ADC samples
+    channel_config_set_dreq(&amp;cfg, DREQ_ADC);
+
+    dma_channel_configure(dma_chan, &amp;cfg,
+        capture_buf,    // dst
+        &amp;adc_hw-&gt;fifo,  // src
+        CAPTURE_DEPTH,  // transfer count
+        true            // start immediately
+    );
+
+    printf(&quot;Starting capture\n&quot;);
+    adc_run(true);
+
+    // Once DMA finishes, stop any new conversions from starting, and clean up
+    // the FIFO in case the ADC was still mid-conversion.
+    dma_channel_wait_for_finish_blocking(dma_chan);
+    printf(&quot;Capture finished\n&quot;);
+    adc_run(false);
+    adc_fifo_drain();
+
+    // Print samples to stdout so you can display them in pyplot, excel, matlab
+    for (int i = 0; i &lt; CAPTURE_DEPTH; ++i) {
+        printf(&quot;%-3d, &quot;, capture_buf[i]);
+        if (i % 10 == 9)
+            printf(&quot;\n&quot;);
+    }
+}
+
+#define OUTPUT_FREQ_KHZ 5
+#define SAMPLE_WIDTH 5
+// This is the green channel on the VGA board
+#define DAC_PIN_BASE 6
+
+void core1_main() {
+    PIO pio = pio0;
+    uint sm = pio_claim_unused_sm(pio0, true);
+    uint offset = pio_add_program(pio0, &amp;resistor_dac_5bit_program);
+    resistor_dac_5bit_program_init(pio0, sm, offset,
+        OUTPUT_FREQ_KHZ * 1000 * 2 * (1 &lt;&lt; SAMPLE_WIDTH), DAC_PIN_BASE);
+    while (true) {
+        // Triangle wave
+        for (int i = 0; i &lt; (1 &lt;&lt; SAMPLE_WIDTH); ++i)
+            pio_sm_put_blocking(pio, sm, i);
+        for (int i = 0; i &lt; (1 &lt;&lt; SAMPLE_WIDTH); ++i)
+            pio_sm_put_blocking(pio, sm, (1 &lt;&lt; SAMPLE_WIDTH) - 1 - i);
+    }
+}
+</code></pre>
+<p>CMakeList.txt:</p>
+<pre><code class="language-cmake">add_executable(adc_dma_capture
+        dma_capture.c
+        )
+
+pico_generate_pio_header(adc_dma_capture ${CMAKE_CURRENT_LIST_DIR}/resistor_dac.pio)
+
+target_link_libraries(adc_dma_capture
+		pico_stdlib
+		hardware_adc
+		hardware_dma
+		# For the dummy output:
+		hardware_pio
+		pico_multicore
+		)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(adc_dma_capture)
+
+# add url via pico_set_program_url
+example_auto_set_url(adc_dma_capture)
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[SPI]]></title>
+        <id>https://zihan987.github.io/post/spi/</id>
+        <link href="https://zihan987.github.io/post/spi/">
+        </link>
+        <updated>2021-08-12T05:13:41.000Z</updated>
+        <summary type="html"><![CDATA[<p>SPI是串行外设接口(Serial Peripheral Interface)的缩写。是 Motorola 公司推出的一 种同步串行接口技术，是一种高速的，全双工，同步的通信总线。主要应用在EEPROM、Flash、实时时钟(RTC)、数模转换器(ADC)、网络控制器、MCU、数字信号处理器(DSP)以及数字信号解码器之间。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>SPI是串行外设接口(Serial Peripheral Interface)的缩写。是 Motorola 公司推出的一 种同步串行接口技术，是一种高速的，全双工，同步的通信总线。主要应用在EEPROM、Flash、实时时钟(RTC)、数模转换器(ADC)、网络控制器、MCU、数字信号处理器(DSP)以及数字信号解码器之间。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<pre><code class="language-python">from machine import SPI
+
+spi = SPI(0)
+spi = SPI(0, 100_000)
+spi = SPI(0, 100_000, polarity=1, phase=1)
+
+spi.write('test')
+spi.read(5)
+
+buf = bytearray(3)
+spi.write_readinto('out', buf)
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>以bme280温度压力传感器为例。</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/bme280_spi_bb.png?raw=true" alt="bme280_spi_bb.png" loading="lazy"></figure>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/spi.h&quot;
+
+#define PIN_MISO 16
+#define PIN_CS   17
+#define PIN_SCK  18
+#define PIN_MOSI 19
+
+#define SPI_PORT spi0
+#define READ_BIT 0x80
+
+int32_t t_fine;
+
+uint16_t dig_T1;
+int16_t dig_T2, dig_T3;
+uint16_t dig_P1;
+int16_t dig_P2, dig_P3, dig_P4, dig_P5, dig_P6, dig_P7, dig_P8, dig_P9;
+uint8_t dig_H1, dig_H3;
+int8_t dig_H6;
+int16_t dig_H2, dig_H4, dig_H5;
+
+/* The following compensation functions are required to convert from the raw ADC
+data from the chip to something usable. Each chip has a different set of
+compensation parameters stored on the chip at point of manufacture, which are
+read from the chip at startup and used inthese routines.
+*/
+int32_t compensate_temp(int32_t adc_T) {
+    int32_t var1, var2, T;
+    var1 = ((((adc_T &gt;&gt; 3) - ((int32_t) dig_T1 &lt;&lt; 1))) * ((int32_t) dig_T2)) &gt;&gt; 11;
+    var2 = (((((adc_T &gt;&gt; 4) - ((int32_t) dig_T1)) * ((adc_T &gt;&gt; 4) - ((int32_t) dig_T1))) &gt;&gt; 12) * ((int32_t) dig_T3))
+            &gt;&gt; 14;
+
+    t_fine = var1 + var2;
+    T = (t_fine * 5 + 128) &gt;&gt; 8;
+    return T;
+}
+
+uint32_t compensate_pressure(int32_t adc_P) {
+    int32_t var1, var2;
+    uint32_t p;
+    var1 = (((int32_t) t_fine) &gt;&gt; 1) - (int32_t) 64000;
+    var2 = (((var1 &gt;&gt; 2) * (var1 &gt;&gt; 2)) &gt;&gt; 11) * ((int32_t) dig_P6);
+    var2 = var2 + ((var1 * ((int32_t) dig_P5)) &lt;&lt; 1);
+    var2 = (var2 &gt;&gt; 2) + (((int32_t) dig_P4) &lt;&lt; 16);
+    var1 = (((dig_P3 * (((var1 &gt;&gt; 2) * (var1 &gt;&gt; 2)) &gt;&gt; 13)) &gt;&gt; 3) + ((((int32_t) dig_P2) * var1) &gt;&gt; 1)) &gt;&gt; 18;
+    var1 = ((((32768 + var1)) * ((int32_t) dig_P1)) &gt;&gt; 15);
+    if (var1 == 0)
+        return 0;
+
+    p = (((uint32_t) (((int32_t) 1048576) - adc_P) - (var2 &gt;&gt; 12))) * 3125;
+    if (p &lt; 0x80000000)
+        p = (p &lt;&lt; 1) / ((uint32_t) var1);
+    else
+        p = (p / (uint32_t) var1) * 2;
+
+    var1 = (((int32_t) dig_P9) * ((int32_t) (((p &gt;&gt; 3) * (p &gt;&gt; 3)) &gt;&gt; 13))) &gt;&gt; 12;
+    var2 = (((int32_t) (p &gt;&gt; 2)) * ((int32_t) dig_P8)) &gt;&gt; 13;
+    p = (uint32_t) ((int32_t) p + ((var1 + var2 + dig_P7) &gt;&gt; 4));
+
+    return p;
+}
+
+uint32_t compensate_humidity(int32_t adc_H) {
+    int32_t v_x1_u32r;
+    v_x1_u32r = (t_fine - ((int32_t) 76800));
+    v_x1_u32r = (((((adc_H &lt;&lt; 14) - (((int32_t) dig_H4) &lt;&lt; 20) - (((int32_t) dig_H5) * v_x1_u32r)) +
+                   ((int32_t) 16384)) &gt;&gt; 15) * (((((((v_x1_u32r * ((int32_t) dig_H6)) &gt;&gt; 10) * (((v_x1_u32r *
+                                                                                                  ((int32_t) dig_H3))
+            &gt;&gt; 11) + ((int32_t) 32768))) &gt;&gt; 10) + ((int32_t) 2097152)) *
+                                                 ((int32_t) dig_H2) + 8192) &gt;&gt; 14));
+    v_x1_u32r = (v_x1_u32r - (((((v_x1_u32r &gt;&gt; 15) * (v_x1_u32r &gt;&gt; 15)) &gt;&gt; 7) * ((int32_t) dig_H1)) &gt;&gt; 4));
+    v_x1_u32r = (v_x1_u32r &lt; 0 ? 0 : v_x1_u32r);
+    v_x1_u32r = (v_x1_u32r &gt; 419430400 ? 419430400 : v_x1_u32r);
+
+    return (uint32_t) (v_x1_u32r &gt;&gt; 12);
+}
+
+static inline void cs_select() {
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+    gpio_put(PIN_CS, 0);  // Active low
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+}
+
+static inline void cs_deselect() {
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+    gpio_put(PIN_CS, 1);
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+}
+
+static void write_register(uint8_t reg, uint8_t data) {
+    uint8_t buf[2];
+    buf[0] = reg &amp; 0x7f;  // remove read bit as this is a write
+    buf[1] = data;
+    cs_select();
+    spi_write_blocking(SPI_PORT, buf, 2);
+    cs_deselect();
+    sleep_ms(10);
+}
+
+static void read_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
+    // For this particular device, we send the device the register we want to read
+    // first, then subsequently read from the device. The register is auto incrementing
+    // so we don't need to keep sending the register we want, just the first.
+    reg |= READ_BIT;
+    cs_select();
+    spi_write_blocking(SPI_PORT, &amp;reg, 1);
+    sleep_ms(10);
+    spi_read_blocking(SPI_PORT, 0, buf, len);
+    cs_deselect();
+    sleep_ms(10);
+}
+
+/* This function reads the manufacturing assigned compensation parameters from the device */
+void read_compensation_parameters() {
+    uint8_t buffer[26];
+
+    read_registers(0x88, buffer, 24);
+
+    dig_T1 = buffer[0] | (buffer[1] &lt;&lt; 8);
+    dig_T2 = buffer[2] | (buffer[3] &lt;&lt; 8);
+    dig_T3 = buffer[4] | (buffer[5] &lt;&lt; 8);
+
+    dig_P1 = buffer[6] | (buffer[7] &lt;&lt; 8);
+    dig_P2 = buffer[8] | (buffer[9] &lt;&lt; 8);
+    dig_P3 = buffer[10] | (buffer[11] &lt;&lt; 8);
+    dig_P4 = buffer[12] | (buffer[13] &lt;&lt; 8);
+    dig_P5 = buffer[14] | (buffer[15] &lt;&lt; 8);
+    dig_P6 = buffer[16] | (buffer[17] &lt;&lt; 8);
+    dig_P7 = buffer[18] | (buffer[19] &lt;&lt; 8);
+    dig_P8 = buffer[20] | (buffer[21] &lt;&lt; 8);
+    dig_P9 = buffer[22] | (buffer[23] &lt;&lt; 8);
+
+    dig_H1 = buffer[25];
+
+    read_registers(0xE1, buffer, 8);
+
+    dig_H2 = buffer[0] | (buffer[1] &lt;&lt; 8);
+    dig_H3 = (int8_t) buffer[2];
+    dig_H4 = buffer[3] &lt;&lt; 4 | (buffer[4] &amp; 0xf);
+    dig_H5 = (buffer[5] &gt;&gt; 4) | (buffer[6] &lt;&lt; 4);
+    dig_H6 = (int8_t) buffer[7];
+}
+
+static void bme280_read_raw(int32_t *humidity, int32_t *pressure, int32_t *temperature) {
+    uint8_t buffer[8];
+
+    read_registers(0xF7, buffer, 8);
+    *pressure = ((uint32_t) buffer[0] &lt;&lt; 12) | ((uint32_t) buffer[1] &lt;&lt; 4) | (buffer[2] &gt;&gt; 4);
+    *temperature = ((uint32_t) buffer[3] &lt;&lt; 12) | ((uint32_t) buffer[4] &lt;&lt; 4) | (buffer[5] &gt;&gt; 4);
+    *humidity = (uint32_t) buffer[6] &lt;&lt; 8 | buffer[7];
+}
+
+int main() {
+    stdio_init_all();
+
+    printf(&quot;Hello, bme280! Reading raw data from registers via SPI...\n&quot;);
+
+    // This example will use SPI0 at 0.5MHz.
+    spi_init(SPI_PORT, 500 * 1000);
+    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+
+    // Chip select is active-low, so we'll initialise it to a driven-high state
+    gpio_init(PIN_CS);
+    gpio_set_dir(PIN_CS, GPIO_OUT);
+    gpio_put(PIN_CS, 1);
+
+    // See if SPI is working - interrograte the device for its I2C ID number, should be 0x60
+    uint8_t id;
+    read_registers(0xD0, &amp;id, 1);
+    printf(&quot;Chip ID is 0x%x\n&quot;, id);
+
+    read_compensation_parameters();
+
+    write_register(0xF2, 0x1); // Humidity oversampling register - going for x1
+    write_register(0xF4, 0x27);// Set rest of oversampling modes and run mode to normal
+
+    int32_t humidity, pressure, temperature;
+
+    while (1) {
+        bme280_read_raw(&amp;humidity, &amp;pressure, &amp;temperature);
+
+        // These are the raw numbers from the chip, so we need to run through the
+        // compensations to get human understandable numbers
+        pressure = compensate_pressure(pressure);
+        temperature = compensate_temp(temperature);
+        humidity = compensate_humidity(humidity);
+
+        printf(&quot;Humidity = %.2f%%\n&quot;, humidity / 1024.0);
+        printf(&quot;Pressure = %dPa\n&quot;, pressure);
+        printf(&quot;Temp. = %.2fC\n&quot;, temperature / 100.0);
+
+        sleep_ms(1000);
+    }
+
+    return 0;
+}
+</code></pre>
+<p>CMakeList.txt:</p>
+<pre><code class="language-cmake">add_executable(bme280_spi
+        bme280_spi.c
+        )
+
+# Pull in our (to be renamed) simple get you started dependencies
+target_link_libraries(bme280_spi pico_stdlib hardware_spi)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(bme280_spi)
+
+# add url via pico_set_program_url
+example_auto_set_url(bme280_spi)
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[I2C]]></title>
+        <id>https://zihan987.github.io/post/i2c/</id>
+        <link href="https://zihan987.github.io/post/i2c/">
+        </link>
+        <updated>2021-08-12T05:11:12.000Z</updated>
+        <summary type="html"><![CDATA[<p>I2C总线是一种简单、双向二线制同步串行总线。<a href="https://baike.baidu.com/item/SDA">SDA</a>(串行数据线)和<a href="https://baike.baidu.com/item/SCL">SCL</a>(串行时钟线)都是双向I/O线，接口电路为<a href="https://baike.baidu.com/item/%E5%BC%80%E6%BC%8F%E8%BE%93%E5%87%BA">开漏输出</a>。需通过<a href="https://baike.baidu.com/item/%E4%B8%8A%E6%8B%89%E7%94%B5%E9%98%BB">上拉电阻</a>接电源VCC．当总线空闲时。两根线都是<a href="https://baike.baidu.com/item/%E9%AB%98%E7%94%B5%E5%B9%B3">高电平</a>，连接总线的外同器件都是<a href="https://baike.baidu.com/item/CMOS">CMOS</a>器件，输出级也是开漏电路。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>I2C总线是一种简单、双向二线制同步串行总线。<a href="https://baike.baidu.com/item/SDA">SDA</a>(串行数据线)和<a href="https://baike.baidu.com/item/SCL">SCL</a>(串行时钟线)都是双向I/O线，接口电路为<a href="https://baike.baidu.com/item/%E5%BC%80%E6%BC%8F%E8%BE%93%E5%87%BA">开漏输出</a>。需通过<a href="https://baike.baidu.com/item/%E4%B8%8A%E6%8B%89%E7%94%B5%E9%98%BB">上拉电阻</a>接电源VCC．当总线空闲时。两根线都是<a href="https://baike.baidu.com/item/%E9%AB%98%E7%94%B5%E5%B9%B3">高电平</a>，连接总线的外同器件都是<a href="https://baike.baidu.com/item/CMOS">CMOS</a>器件，输出级也是开漏电路。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<p>我们以OLED屏幕的通信为例。</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/pico-and-oled.png?raw=true" alt="pico-and-oled.png" loading="lazy"></figure>
+<pre><code class="language-python">from machine import I2C, ADC
+from sh1106 import SH1106_I2C
+import framebuf
+
+
+WIDTH  = 128                                            # oled display width
+HEIGHT = 128                                            # oled display height
+
+i2c = I2C(0)                                            # Init I2C using I2C0 defaults, SCL=Pin(GP9), SDA=Pin(GP8), freq=400000
+print(&quot;I2C Address      : &quot;+hex(i2c.scan()[0]).upper()) # Display device address
+print(&quot;I2C Configuration: &quot;+str(i2c))                   # Display I2C config
+
+
+oled = SH1106_I2C(WIDTH, HEIGHT, i2c)                  # Init oled display
+
+# Raspberry Pi logo as 32x32 bytearray
+buffer = bytearray(b&quot;\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00|?\x00\x01\x86@\x80\x01\x01\x80\x80\x01\x11\x88\x80\x01\x05\xa0\x80\x00\x83\xc1\x00\x00C\xe3\x00\x00~\xfc\x00\x00L'\x00\x00\x9c\x11\x00\x00\xbf\xfd\x00\x00\xe1\x87\x00\x01\xc1\x83\x80\x02A\x82@\x02A\x82@\x02\xc1\xc2@\x02\xf6&gt;\xc0\x01\xfc=\x80\x01\x18\x18\x80\x01\x88\x10\x80\x00\x8c!\x00\x00\x87\xf1\x00\x00\x7f\xf6\x00\x008\x1c\x00\x00\x0c \x00\x00\x03\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00&quot;)
+
+# Load the raspberry pi logo into the framebuffer (the image is 32x32)
+fb = framebuf.FrameBuffer(buffer, 32, 32, framebuf.MONO_HLSB)
+
+# Clear the oled display in case it has junk on it.
+oled.fill(0)
+
+# Blit the image from the framebuffer to the oled display
+oled.blit(fb, 96, 0)
+
+# Add some text
+oled.text(&quot;Raspberry Pi&quot;,5,5)
+oled.text(&quot;Pico&quot;,5,15)
+
+# Finally update the oled display so the image &amp; text is displayed
+oled.show()
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>我们以LCD1602为例。</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/lcd_1602_i2c_bb.png?raw=true" alt="lcd_1602_i2c_bb.png" loading="lazy"></figure>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/i2c.h&quot;
+#include &quot;pico/binary_info.h&quot;
+
+/* Example code to drive a 16x2 LCD panel via a I2C bridge chip (e.g. PCF8574)
+   NOTE: The panel must be capable of being driven at 3.3v NOT 5v. The Pico
+   GPIO (and therefor I2C) cannot be used at 5v.
+   You will need to use a level shifter on the I2C lines if you want to run the
+   board at 5v.
+   Connections on Raspberry Pi Pico board, other boards may vary.
+   GPIO 4 (pin 6)-&gt; SDA on LCD bridge board
+   GPIO 5 (pin 7)-&gt; SCL on LCD bridge board
+   3.3v (pin 36) -&gt; VCC on LCD bridge board
+   GND (pin 38)  -&gt; GND on LCD bridge board
+*/
+// commands
+const int LCD_CLEARDISPLAY = 0x01;
+const int LCD_RETURNHOME = 0x02;
+const int LCD_ENTRYMODESET = 0x04;
+const int LCD_DISPLAYCONTROL = 0x08;
+const int LCD_CURSORSHIFT = 0x10;
+const int LCD_FUNCTIONSET = 0x20;
+const int LCD_SETCGRAMADDR = 0x40;
+const int LCD_SETDDRAMADDR = 0x80;
+
+// flags for display entry mode
+const int LCD_ENTRYSHIFTINCREMENT = 0x01;
+const int LCD_ENTRYLEFT = 0x02;
+
+// flags for display and cursor control
+const int LCD_BLINKON = 0x01;
+const int LCD_CURSORON = 0x02;
+const int LCD_DISPLAYON = 0x04;
+
+// flags for display and cursor shift
+const int LCD_MOVERIGHT = 0x04;
+const int LCD_DISPLAYMOVE = 0x08;
+
+// flags for function set
+const int LCD_5x10DOTS = 0x04;
+const int LCD_2LINE = 0x08;
+const int LCD_8BITMODE = 0x10;
+
+// flag for backlight control
+const int LCD_BACKLIGHT = 0x08;
+
+const int LCD_ENABLE_BIT = 0x04;
+
+#define I2C_PORT i2c0
+// By default these LCD display drivers are on bus address 0x27
+static int addr = 0x27;
+
+// Modes for lcd_send_byte
+#define LCD_CHARACTER  1
+#define LCD_COMMAND    0
+
+#define MAX_LINES      2
+#define MAX_CHARS      16
+
+/* Quick helper function for single byte transfers */
+void i2c_write_byte(uint8_t val) {
+    i2c_write_blocking(I2C_PORT, addr, &amp;val, 1, false);
+}
+
+void lcd_toggle_enable(uint8_t val) {
+    // Toggle enable pin on LCD display
+    // We cannot do this too quickly or things don't work
+#define DELAY_US 600
+    sleep_us(DELAY_US);
+    i2c_write_byte(val | LCD_ENABLE_BIT);
+    sleep_us(DELAY_US);
+    i2c_write_byte(val &amp; ~LCD_ENABLE_BIT);
+    sleep_us(DELAY_US);
+}
+
+// The display is sent a byte as two separate nibble transfers
+void lcd_send_byte(uint8_t val, int mode) {
+    uint8_t high = mode | (val &amp; 0xF0) | LCD_BACKLIGHT;
+    uint8_t low = mode | ((val &lt;&lt; 4) &amp; 0xF0) | LCD_BACKLIGHT;
+
+    i2c_write_byte(high);
+    lcd_toggle_enable(high);
+    i2c_write_byte(low);
+    lcd_toggle_enable(low);
+}
+
+void lcd_clear(void) {
+    lcd_send_byte(LCD_CLEARDISPLAY, LCD_COMMAND);
+}
+
+// go to location on LCD
+void lcd_set_cursor(int line, int position) {
+    int val = (line == 0) ? 0x80 + position : 0xC0 + position;
+    lcd_send_byte(val, LCD_COMMAND);
+}
+
+static void inline lcd_char(char val) {
+    lcd_send_byte(val, LCD_CHARACTER);
+}
+
+void lcd_string(const char *s) {
+    while (*s) {
+        lcd_char(*s++);
+    }
+}
+
+void lcd_init() {
+    lcd_send_byte(0x03, LCD_COMMAND);
+    lcd_send_byte(0x03, LCD_COMMAND);
+    lcd_send_byte(0x03, LCD_COMMAND);
+    lcd_send_byte(0x02, LCD_COMMAND);
+
+    lcd_send_byte(LCD_ENTRYMODESET | LCD_ENTRYLEFT, LCD_COMMAND);
+    lcd_send_byte(LCD_FUNCTIONSET | LCD_2LINE, LCD_COMMAND);
+    lcd_send_byte(LCD_DISPLAYCONTROL | LCD_DISPLAYON, LCD_COMMAND);
+    lcd_clear();
+}
+
+int main() {
+    // This example will use I2C0 on GPIO4 (SDA) and GPIO5 (SCL)
+    i2c_init(I2C_PORT, 100 * 1000);
+    gpio_set_function(4, GPIO_FUNC_I2C);
+    gpio_set_function(5, GPIO_FUNC_I2C);
+    gpio_pull_up(4);
+    gpio_pull_up(5);
+    // Make the I2C pins available to picotool
+    bi_decl( bi_2pins_with_func(4, 5, GPIO_FUNC_I2C));
+
+    lcd_init();
+
+    static uint8_t *message[] =
+            {
+                    &quot;RP2040 by&quot;, &quot;Raspberry Pi&quot;,
+                    &quot;A brand new&quot;, &quot;microcontroller&quot;,
+                    &quot;Twin core M0&quot;, &quot;Full C SDK&quot;,
+                    &quot;More power in&quot;, &quot;your product&quot;,
+                    &quot;More beans&quot;, &quot;than Heinz!&quot;
+            };
+
+    while (1) {
+        for (int m = 0; m &lt; sizeof(message) / sizeof(message[0]); m += MAX_LINES) {
+            for (int line = 0; line &lt; MAX_LINES; line++) {
+                lcd_set_cursor(line, (MAX_CHARS / 2) - strlen(message[m + line]) / 2);
+                lcd_string(message[m + line]);
+            }
+            sleep_ms(2000);
+            lcd_clear();
+        }
+    }
+
+    return 0;
+}
+</code></pre>
+<p>CMakeList.txt:</p>
+<pre><code class="language-cmake">  
+add_executable(lcd_1602_i2c
+        lcd_1602_i2c.c
+        )
+
+# Pull in our (to be renamed) simple get you started dependencies
+target_link_libraries(lcd_1602_i2c pico_stdlib hardware_i2c)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(lcd_1602_i2c)
+
+# add url via pico_set_program_url
+example_auto_set_url(lcd_1602_i2c)
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[中断、定时器]]></title>
+        <id>https://zihan987.github.io/post/zhong-duan-ding-shi-qi/</id>
+        <link href="https://zihan987.github.io/post/zhong-duan-ding-shi-qi/">
+        </link>
+        <updated>2021-08-12T05:09:23.000Z</updated>
+        <summary type="html"><![CDATA[<p>中断和定时器是CPU必不可少的部分，详细的介绍这里不过多赘述，我们直接看一下代码。定时器的代码主要结合C去讲解，这样比较清楚。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>中断和定时器是CPU必不可少的部分，详细的介绍这里不过多赘述，我们直接看一下代码。定时器的代码主要结合C去讲解，这样比较清楚。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<p>中断</p>
+<pre><code class="language-python">from machine import Pin
+
+p2 = Pin(2, Pin.IN, Pin.PULL_UP)
+p2.irq(lambda pin: print(&quot;IRQ with flags:&quot;, pin.irq().flags()),
+Pin.IRQ_FALLING)
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>定时器功能也很基础,而且只有一个,主要功能如下:</p>
+<ul>
+<li>64位计数器 (频率固定1MHz,所以要好几千年才能溢出)</li>
+<li>4个闹钟 (闹钟是只匹配低32B,最大间隔4295秒)</li>
+<li>寄存器自带映射,所以多个处理器同时访问也不用考虑竞争问题(无需考虑竞争问题)</li>
+</ul>
+<p>其中ALARM功能只会发起一次中断,中断发生后就会清除ARMED位,所有函数都有他的毫秒版本和微秒版本。</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;pico/util/queue.h&quot;
+
+bool timer_callback(repeating_timer_t *rt);
+
+queue_t sample_fifo;
+
+// using struct as an example, but primitive types can be used too
+typedef struct element {
+    uint value;
+} element_t;
+
+const int FIFO_LENGTH = 32;
+
+int main() {
+    stdio_init_all();
+
+    int hz = 25;
+
+    queue_init(&amp;sample_fifo, sizeof(element_t), FIFO_LENGTH);
+
+    repeating_timer_t timer;
+
+    // negative timeout means exact delay (rather than delay between callbacks)
+    if (!add_repeating_timer_us(-1000000 / hz, timer_callback, NULL, &amp;timer)) {
+        printf(&quot;Failed to add timer\n&quot;);
+        return 1;
+    }
+
+    // read some blocking
+
+    for (int i = 0; i &lt; 10; i++) {
+        element_t element;
+        queue_remove_blocking(&amp;sample_fifo, &amp;element);
+        printf(&quot;Got %d: %d\n&quot;, i, element.value);
+    }
+
+    // now retrieve all that are available periodically (simulate polling)
+    for (int i = 0; i &lt; 10; i++) {
+        int count = queue_get_level(&amp;sample_fifo);
+        if (count) {
+            printf(&quot;Getting %d, %d:\n&quot;, i, count);
+            for (; count &gt; 0; count--) {
+                element_t element;
+                queue_remove_blocking(&amp;sample_fifo, &amp;element);
+                printf(&quot;  got %d\n&quot;, element.value);
+            }
+        }
+        sleep_us(5000000 / hz); // sleep for 5 times the sampling period
+    }
+
+    cancel_repeating_timer(&amp;timer);
+
+    // drain any remaining
+    element_t element;
+    while (queue_try_remove(&amp;sample_fifo, &amp;element)) {
+        printf(&quot;Got remaining %d\n&quot;, element.value);
+    }
+
+    queue_free(&amp;sample_fifo);
+    printf(&quot;Done\n&quot;);
+}
+
+bool timer_callback(repeating_timer_t *rt) {
+    static int v = 100;
+    element_t element = {
+            .value = v
+    };
+    v += 100;
+
+    if (!queue_try_add(&amp;sample_fifo, &amp;element)) {
+        printf(&quot;FIFO was full\n&quot;);
+    }
+    return true; // keep repeating
+}
+</code></pre>
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">if (NOT PICO_TIME_NO_ALARM_SUPPORT)
+    add_executable(periodic_sampler
+            periodic_sampler.c
+            )
+
+    # Pull in our (to be renamed) simple get you started dependencies
+    target_link_libraries(periodic_sampler pico_stdlib)
+
+    # create map/bin/hex file etc.
+    pico_add_extra_outputs(periodic_sampler)
+
+    # add url via pico_set_program_url
+    example_auto_set_url(periodic_sampler)
+endif()
+</code></pre>
+<p>lowlevel:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/timer.h&quot;
+#include &quot;hardware/irq.h&quot;
+
+/// \tag::get_time[]
+// Simplest form of getting 64 bit time from the timer.
+// It isn't safe when called from 2 cores because of the latching
+// so isn't implemented this way in the sdk
+static uint64_t get_time(void) {
+    // Reading low latches the high value
+    uint32_t lo = timer_hw-&gt;timelr;
+    uint32_t hi = timer_hw-&gt;timehr;
+    return ((uint64_t) hi &lt;&lt; 32u) | lo;
+}
+/// \end::get_time[]
+
+/// \tag::alarm_standalone[]
+// Use alarm 0
+#define ALARM_NUM 0
+#define ALARM_IRQ TIMER_IRQ_0
+
+// Alarm interrupt handler
+static volatile bool alarm_fired;
+
+static void alarm_irq(void) {
+    // Clear the alarm irq
+    hw_clear_bits(&amp;timer_hw-&gt;intr, 1u &lt;&lt; ALARM_NUM);
+
+    // Assume alarm 0 has fired
+    printf(&quot;Alarm IRQ fired\n&quot;);
+    alarm_fired = true;
+}
+
+static void alarm_in_us(uint32_t delay_us) {
+    // Enable the interrupt for our alarm (the timer outputs 4 alarm irqs)
+    hw_set_bits(&amp;timer_hw-&gt;inte, 1u &lt;&lt; ALARM_NUM);
+    // Set irq handler for alarm irq
+    irq_set_exclusive_handler(ALARM_IRQ, alarm_irq);
+    // Enable the alarm irq
+    irq_set_enabled(ALARM_IRQ, true);
+    // Enable interrupt in block and at processor
+
+    // Alarm is only 32 bits so if trying to delay more
+    // than that need to be careful and keep track of the upper
+    // bits
+    uint64_t target = timer_hw-&gt;timerawl + delay_us;
+
+    // Write the lower 32 bits of the target time to the alarm which
+    // will arm it
+    timer_hw-&gt;alarm[ALARM_NUM] = (uint32_t) target;
+}
+
+int main() {
+    stdio_init_all();
+    printf(&quot;Timer lowlevel!\n&quot;);
+
+    // Set alarm every 2 seconds
+    while (1) {
+        alarm_fired = false;
+        alarm_in_us(1000000 * 2);
+        // Wait for alarm to fire
+        while (!alarm_fired);
+    }
+}
+</code></pre>
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">if (PICO_ON_DEVICE)
+    add_executable(timer_lowlevel
+            timer_lowlevel.c)
+
+    # Disable SDK alarm support for this lowlevel example
+    set(PICO_TIME_DEFAULT_ALARM_POOL_DISABLED 1)
+
+    target_link_libraries(timer_lowlevel pico_stdlib)
+
+    # create map/bin/hex file etc.
+    pico_add_extra_outputs(timer_lowlevel)
+
+    # add url via pico_set_program_url
+    example_auto_set_url(timer_lowlevel)
+endif ()
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[UART]]></title>
+        <id>https://zihan987.github.io/post/uart/</id>
+        <link href="https://zihan987.github.io/post/uart/">
+        </link>
+        <updated>2021-08-12T05:07:39.000Z</updated>
+        <summary type="html"><![CDATA[<p>USART是一个全双工通用同步/异步串行收发模块，该接口是一个高度灵活的串行通信设备。USART收发模块一般分为三大部分：<a href="https://baike.baidu.com/item/%E6%97%B6%E9%92%9F%E5%8F%91%E7%94%9F%E5%99%A8/9827742">时钟发生器</a>、数据发送器和接收器。控制<a href="https://baike.baidu.com/item/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>为所有的模块共享。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>USART是一个全双工通用同步/异步串行收发模块，该接口是一个高度灵活的串行通信设备。USART收发模块一般分为三大部分：<a href="https://baike.baidu.com/item/%E6%97%B6%E9%92%9F%E5%8F%91%E7%94%9F%E5%99%A8/9827742">时钟发生器</a>、数据发送器和接收器。控制<a href="https://baike.baidu.com/item/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>为所有的模块共享。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
 <table>
 <thead>
 <tr>
-<th style="text-align:left">厂家</th>
-<th style="text-align:left">芯片型号</th>
-<th style="text-align:left">算力（Tops）</th>
+<th>**Function</th>
+<th><strong>Default</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left">Amlogic</td>
-<td style="text-align:left">A311D</td>
-<td style="text-align:left">5.0</td>
+<td>UART_BAUDRATE</td>
+<td>115,200</td>
 </tr>
 <tr>
-<td style="text-align:left"></td>
-<td style="text-align:left">S905D3</td>
-<td style="text-align:left">1.2</td>
+<td>UART_BITS</td>
+<td>8</td>
 </tr>
 <tr>
-<td style="text-align:left">NXP</td>
-<td style="text-align:left">i.MX 8M Plus</td>
-<td style="text-align:left">2.4</td>
+<td>UART_STOP</td>
+<td>1</td>
+</tr>
+<tr>
+<td>UART0_TX</td>
+<td>Pin 0</td>
+</tr>
+<tr>
+<td>UART0_RX</td>
+<td>Pin 1</td>
+</tr>
+<tr>
+<td>UART1_TX</td>
+<td>Pin 4</td>
+</tr>
+<tr>
+<td>UART1_RX</td>
+<td>Pin 5</td>
 </tr>
 </tbody>
 </table>
-<p>https://zhuanlan.zhihu.com/p/350327223zhuanlan.zhihu.com<img src="https://mmbiz.qpic.cn/mmbiz_svg/jJSbu4Te5ibibwKDjK3Of9FibticlrRicA2F4P7ictnFq54QbEosPk1YSqhQeV0REnW8OvDbllrLrMl7brXicq6C2DcjriaC8icxSSoxa/640?wx_fmt=svg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy"></p>
-<p><strong>Tengine 推理框架运行 YOLOv5s</strong></p>
-<p>依赖 Tengine uint8 tmfile，因此需要两步完成，首先通过 Tengine 模型转换工具将 yolov5s-opt.onnx 转换成 yolov5s.tmfile。</p>
-<pre><code>$ ./tm_convert_tool -f onnx -m yolov5s-opt.onnx -o yolov5s.tmfile
+<pre><code class="language-python">from machine import Pin
+from rp2 import PIO, StateMachine, asm_pio
 
----- Tengine Convert Tool ----
+UART_BAUD = 115200
+PIN_BASE = 10
+NUM_UARTS = 8
 
-Version     : v1.0, 20:25:28 Mar 25 2021
-Status      : float32
-Create tengine model file done: yolov5s.tmfile
-</code></pre>
-<p>再使用开放的 Tengine 量化工具 quant_tool_uint8，校准数据随机从 COCO 数据集中抽取的 10 张，将 yolov5s.tmfile 压缩量化成 yolov5s_uint8.tmfile。</p>
-<pre><code>./quant_tool_uint8 -m yolov5s-relu.tmfile -i coco_1/ -o yolov5s-relu_uint8.tmfile -g 12,320,320 -w 0,0,0 -s 0.0039
-21,0.003921,0.003921 -c 0 -k 1 -t 2
 
----- Tengine Post Training Quantization Tool ----
+@asm_pio(sideset_init=PIO.OUT_HIGH, out_init=PIO.OUT_HIGH, out_shiftdir=PIO.SHIFT_RIGHT)
+def uart_tx():
+    # Block with TX deasserted until data available
+    pull()
+    # Initialise bit counter, assert start bit for 8 cycles
+    set(x, 7)  .side(0)       [7]
+    # Shift out 8 data bits, 8 execution cycles per bit
+    label(&quot;bitloop&quot;)
+    out(pins, 1)              [6]
+    jmp(x_dec, &quot;bitloop&quot;)
+    # Assert stop bit for 8 cycles total (incl 1 for pull())
+    nop()      .side(1)       [6]
 
-Version     : v1.1, 09:33:45 Mar 26 2021
-Status      : uint8, per-layer, asymmetric
-Input model : yolov5s.tmfile
-Output model: yolov5s_uint8.tmfile
-Calib images: coco/
-Algorithm   : MIN MAX
-Dims        : 12 320 320
-Mean        : 0.000 0.000 0.000
-Scale       : 0.004 0.004 0.004
-BGR2RGB     : ON
-Center crop : OFF
-Letter box  : OFF
-YOLOv5 focus: ON
-Thread num  : 2
 
-[Quant Tools Info]: Step 0, load FP32 tmfile.
-[Quant Tools Info]: Step 0, load FP32 tmfile done.
-[Quant Tools Info]: Step 0, load calibration image files.
-[Quant Tools Info]: Step 0, load calibration image files done, image num is 10.
-[Quant Tools Info]: Step 1, find original calibration table.
-[Quant Tools Info]: Step 1, images 00010 / 00010
-[Quant Tools Info]: Step 1, find original calibration table done, output ./table_minmax.scale
-[Quant Tools Info]: Step 2, find calibration table.
-[Quant Tools Info]: Step 2, images 00001 / 00010
-[Quant Tools Info]: Step 2, find calibration table done, output ./table_kl.scale
-[Quant Tools Info]: Thread 2, image nums 10, total time 3678.77 ms, avg time 367.88 ms
-[Quant Tools Info]: Calibration file is using table_minmax.scale
-[Quant Tools Info]: Step 3, load FP32 tmfile once again
-[Quant Tools Info]: Step 3, load FP32 tmfile once again done.
-[Quant Tools Info]: Step 3, load calibration table file table_minmax.scale.
-[Quant Tools Info]: Step 4, optimize the calibration table.
-[Quant Tools Info]: Step 4, quantize activation tensor done.
-[Quant Tools Info]: Step 5, quantize weight tensor done.
-[Quant Tools Info]: Step 6, save Int8 tmfile done, yolov5s_uint8.tmfile
+# Now we add 8 UART TXs, on pins 10 to 17. Use the same baud rate for all of them.
+uarts = []
+for i in range(NUM_UARTS):
+    sm = StateMachine(
+        i, uart_tx, freq=8 * UART_BAUD, sideset_base=Pin(PIN_BASE + i), out_base=Pin(PIN_BASE + i)
+    )
+    sm.active(1)
+    uarts.append(sm)
 
----- Tengine Int8 tmfile create success, best wish for your INT8 inference has a low accuracy loss...\(^0^)/ ----
-</code></pre>
-<p><strong>执行流程</strong></p>
-<p>初始化 -&gt; 启用 TIM-VX 后端 -&gt; 加载模型 -&gt; 加载图片 -&gt; 预处理 -&gt; 运行计算图 -&gt; 后处理 -&gt; 绘制结果（完整代码见本文末尾）</p>
-<pre><code>    /* set runtime options */
-    struct options opt;
-    opt.num_thread = num_thread;
-    opt.cluster = TENGINE_CLUSTER_ALL;
-    opt.precision = TENGINE_MODE_UINT8;
-    opt.affinity = 0;
+# We can print characters from each UART by pushing them to the TX FIFO
+def pio_uart_print(sm, s):
+    for c in s:
+        sm.put(ord(c))
 
-    /* inital tengine */
-    init_tengine()
 
-    /* create VeriSilicon TIM-VX backend */
-    context_t timvx_context = create_context(&quot;timvx&quot;, 1);
-    int rtt = add_context_device(timvx_context, &quot;TIMVX&quot;);
+# Print a different message from each UART
+for i, u in enumerate(uarts):
+    pio_uart_print(u, &quot;Hello from UART {}!\n&quot;.format(i))
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>以下为测试demo：</p>
+<pre><code class="language-c">#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/uart.h&quot;
+#include &quot;hardware/irq.h&quot;
 
-    /* create graph, load tengine model xxx.tmfile */
-    graph_t graph = create_graph(timvx_context, &quot;tengine&quot;, model_file);
 
-    /* prerun graph, set work options(num_thread, cluster, precision) */
-    prerun_graph_multithread(graph, opt);
+/// \tag::uart_advanced[]
 
-    /* prepare process input data, set the data mem to input tensor */
-    float input_scale = 0.f;
-    int input_zero_point = 0;
-    get_tensor_quant_param(input_tensor, &amp;input_scale, &amp;input_zero_point, 1);    
-    get_input_data_focas_uint8(image_file, input_data, img_h, img_w, mean, scale, input_scale, input_zero_point);
+#define UART_ID uart0
+#define BAUD_RATE 115200
+#define DATA_BITS 8
+#define STOP_BITS 1
+#define PARITY    UART_PARITY_NONE
 
-    /* run graph */
-    run_graph(graph, 1);
+// We are using pins 0 and 1, but see the GPIO function select table in the
+// datasheet for information on which other pins can be used.
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
 
-    /* yolov5 postprocess */
-    tensor_t p8_output = get_graph_output_tensor(graph, 0, 0);
-    tensor_t p16_output = get_graph_output_tensor(graph, 1, 0);
-    tensor_t p32_output = get_graph_output_tensor(graph, 2, 0);
-</code></pre>
-<p>预处理这里需要注意的地方是，需要做 letterbox 处理，将图片补齐到 640*640，应该是以下效果。</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQe8MSNl2SmW9jziajvQu4cZvPocv92RVhpibBAlsPhRWqS1iciad4V5BWtQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">原始图片，BGR2RGB</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQ2ibTiaR3zAtn7LUqZFoZNwN8fFIicXhDf8a7ibAyz4gPUSbB7RfmpGBKXQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Letterbox 640 处理之后</p>
-<p>最终在 Khadas VIM3 上的耗时表现</p>
-<pre><code>khadas@Khadas:~/qtang/tengine-lite/build/examples$ ./tm_yolov5s_timvx -m yolov5s_uint8.tmfile -i ssd_dog.jpg -r 5
-Tengine plugin allocator TIMVX is registered.
-tengine-lite library version: 1.2-dev
-TIM-VX prerun.
-Repeat 5 times, thread 1, avg time 71.51 ms, max_time 74.49 ms, min_time 68.43 ms
---------------------------------------
-detection num: 3
-16: 88%, [ 135,  224,  313,  547], dog
- 7: 86%, [ 472,   73,  693,  171], truck
- 1: 73%, [ 130,  108,  574,  439], bicycle
-</code></pre>
-<p>Float32模型与 Int8模型输出结果对比，感觉还行。</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQhvJBMib4UTKEqnLjKBrMyrhPA5VU2RLZiaM38PEic4YvJiaccKiczacCftQ/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Float32 模型检测结果</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/gIb5Pv6jCfeuxDmIfq7gJ0jh23TbojrQxha4ia1OtJ0gOpqg5TcoVqlPggfcITz6a7kULyWQFtuMR1mnGZfZa7A/640?wx_fmt=jpeg&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1&amp;wx_co=1" alt="图片" loading="lazy">Khadas VIM3 NPU Uint8 量化模型检测结果</p>
-<h2 id="总结">总结</h2>
-<p><strong>主要贡献：</strong></p>
-<ol>
-<li>提供了一个“一键”优化 YOLOv5s ONNX 开源版本模型的 python 脚本；</li>
-<li>再一次迭代了量化工具，支持 Focus 处理（精度居然没蹦，也是意外收获）</li>
-</ol>
-<p>至于在 Khadas VIM3 上的部署，今年以来 Tengine 和 VSI 团队紧密联合开发，问题不大，官方支持。</p>
-<p><strong>遗留问题：</strong></p>
-<ol>
-<li>YOLOv5s 的原始网络结构可进一步优化，在精度不掉的情况下，<strong>速度提升 15% - 20%</strong>（溜了……）</li>
-<li>更高效的 Focus 计算方案。</li>
-</ol>
-<h2 id="传送门">传送门</h2>
-<ul>
-<li></li>
-<li></li>
-<li></li>
-</ul>
-<pre><code>https://github.com/OAID/Tenginehttps://github.com/OAID/Tengine/tree/tengine-lite/tools/optimizehttps://github.com/OAID/Tengine/blob/tengine-lite/examples/tm_yolov5s_timvx.cpp
-```![](https://zihan987.github.io/post-images/1628598818726.png)</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Khadas VIM3(Amlogic A311D)上进行Tengine模型推理]]></title>
-        <id>https://zihan987.github.io/post/vim3-shang-bu-shu/</id>
-        <link href="https://zihan987.github.io/post/vim3-shang-bu-shu/">
-        </link>
-        <updated>2021-08-10T10:30:36.000Z</updated>
-        <summary type="html"><![CDATA[<p>今天给大家介绍一下在Khadas VIM3上进行NPU加速(支持在X86_64上模拟)，有关Tengine请参考Tengine的入门教程，稳重需要的模型文件与测试图片在文末的百度网盘链接中。NPU是移动端的进行算法推理的主要是趋势，现在咱们使用的手机、边缘设备上经常能看到它，毕竟Soc才是大佬。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>今天给大家介绍一下在Khadas VIM3上进行NPU加速(支持在X86_64上模拟)，有关Tengine请参考Tengine的入门教程，稳重需要的模型文件与测试图片在文末的百度网盘链接中。NPU是移动端的进行算法推理的主要是趋势，现在咱们使用的手机、边缘设备上经常能看到它，毕竟Soc才是大佬。</p>
-<!-- more -->
-<figure data-type="image" tabindex="1"><img src="data:image/jpeg;base64,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" alt="img" loading="lazy"></figure>
-<p>Khadas VIM3是一款带有NPU的移动端开发板。</p>
-<p>处理器：四核2.2Ghz Cortex-A73满足高性能要求，双核1.8Ghz Cortex-A53满足低功耗要求。</p>
-<p>算力：下一代的深度神经网络单元，性能高达5.0 TOPS。</p>
-<p>购买链接：https://www.khadas.cn/product-page/vim3</p>
-<p>开发需要TIM-VX，可将神经网络模型部署在支持OpenVX的ML加速器上。</p>
-<h3 id="khadas-vim3上的部署">Khadas VIM3上的部署</h3>
-<h4 id="1准备阶段">1.准备阶段</h4>
-<p>下载TIM-VX、Tengine-Lite源码：</p>
-<pre><code class="language-bash">git clone https://github.com/VeriSilicon/TIM-VX.git
-git clone https://github.com/OAID/Tengine.git tengine-lite
-</code></pre>
-<p>下载prebuild-SDK，速度慢的话可以去文末的网盘链接中下载：</p>
-<pre><code class="language-bash">wget -c https://github.com/VeriSilicon/TIM-VX/releases/download/v1.1.28/aarch64_A311D_D312513_A294074_R311680_T312233_O312045.tgz
-tar zxvf aarch64_A311D_D312513_A294074_R311680_T312233_O312045.tgz
-mv aarch64_A311D_D312513_A294074_R311680_T312233_O312045 prebuild-sdk-a311d
-</code></pre>
-<h4 id="2编译">2.编译</h4>
-<p>为安装对应依赖，首先进区Tengine-Lite文件夹：</p>
-<pre><code class="language-bash">cd tengine-lite
-</code></pre>
-<p>将TIM-VX中的对应依赖拷贝到Tengine-Lite项目中，详情可参考TIM-VX的3rdparty文件夹：</p>
-<pre><code class="language-bash">cd  &lt; tengine-lite-root-dir &gt;
-mkdir -p ./3rdparty/tim-vx/lib/aarch64
-mkdir -p ./3rdparty/tim-vx/include
-cp -rf ../TIM-VX/include/ *     ./3rdparty/tim-vx/include/
-cp -rf ../TIM-VX/src ./src/dev/tim-vx/
-cp -rf ../prebuild-sdk-a311d/include/ *     ./3rdparty/tim-vx/include/
-cp -rf ../prebuild-sdk-a311d/lib/ *     ./3rdparty/tim-vx/lib/aarch64/
-rm ./src/dev/tim-vx/src/tim/vx/ * _test.cc
-</code></pre>
-<p>编译指令如下，其他的编译指令请参考Demo中的CMakeLists.txt文件：</p>
-<pre><code class="language-bash">mkdir build &amp;&amp; cd build
-cmake -DTENGINE_ENABLE_TIM_VX=ON -DTENGINE_ENABLE_TIM_VX_INTEGRATION=ON ..
-make -j4
-make install
-</code></pre>
-<h4 id="3测试">3.测试</h4>
-<p>库的路径如下：</p>
-<pre><code class="language-shell">3rdparty/tim-vx/lib/
-├── libArchModelSw.so
-├── libCLC.so
-├── libGAL.so
-├── libNNArchPerf.so
-├── libOpenVX.so
-├── libOpenVXU.so
-└── libVSC.so
+static int chars_rxed = 0;
 
-build/install/lib/
-└── libtengine-lite.so
+// RX interrupt handler
+void on_uart_rx() {
+    while (uart_is_readable(UART_ID)) {
+        uint8_t ch = uart_getc(UART_ID);
+        // Can we send it back?
+        if (uart_is_writable(UART_ID)) {
+            // Change it slightly first!
+            ch++;
+            uart_putc(UART_ID, ch);
+        }
+        chars_rxed++;
+    }
+}
+
+int main() {
+    // Set up our UART with a basic baud rate.
+    uart_init(UART_ID, 2400);
+
+    // Set the TX and RX pins by using the function select on the GPIO
+    // Set datasheet for more information on function select
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+
+    // Actually, we want a different speed
+    // The call will return the actual baud rate selected, which will be as close as
+    // possible to that requested
+    int actual = uart_set_baudrate(UART_ID, BAUD_RATE);
+
+    // Set UART flow control CTS/RTS, we don't want these, so turn them off
+    uart_set_hw_flow(UART_ID, false, false);
+
+    // Set our data format
+    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+
+    // Turn off FIFO's - we want to do this character by character
+    uart_set_fifo_enabled(UART_ID, false);
+
+    // Set up a RX interrupt
+    // We need to set up the handler first
+    // Select correct interrupt for the UART we are using
+    int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
+
+    // And set up and enable the interrupt handlers
+    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+    irq_set_enabled(UART_IRQ, true);
+
+    // Now enable the UART to send interrupts - RX only
+    uart_set_irq_enables(UART_ID, true, false);
+
+    // OK, all set up.
+    // Lets send a basic string out, and then run a loop and wait for RX interrupts
+    // The handler will count them, but also reflect the incoming data back with a slight change!
+    uart_puts(UART_ID, &quot;\nHello, uart interrupts\n&quot;);
+
+    while (1)
+        tight_loop_contents();
+}
 </code></pre>
-<p>Khadas VIM3上需要进行替换。</p>
-<p>必要时需要设置内核，可能自带的旧版本：</p>
-<pre><code class="language-bash">rmmod galcore
-insmod galcore.ko
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">add_executable(uart_advanced
+        uart_advanced.c
+        )
+
+# Pull in our pico_stdlib which pulls in commonly used features
+target_link_libraries(uart_advanced pico_stdlib hardware_uart)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(uart_advanced)
+
+# add url via pico_set_program_url
+example_auto_set_url(uart_advanced)
 </code></pre>
-<p>int8模型量化：</p>
-<pre><code class="language-c++">/* set runtime options */
-struct options opt;
-opt.num_thread = num_thread;
-opt.cluster = TENGINE_CLUSTER_ALL;
-opt.precision = TENGINE_MODE_UINT8;
-opt.affinity = 0;
-</code></pre>
-<p>模型文件以及测试用的用图片在百度网盘链接中：</p>
-<pre><code class="language-bash">./tm_classification_timvx -m squeezenet_uint8.tmfile -i cat.jpg -r 1 -s 0.017,0.017,0.017 -r 10
-</code></pre>
-<p>terminal中的结果如下：</p>
-<pre><code class="language-bash">Tengine plugin allocator TIMVX is registered.Image height not specified, use default 227Image width not specified, use default  227Mean value not specified, use default   104.0, 116.7, 122.7tengine-lite library version: 1.2-devTIM-VX prerun.model file : squeezenet_uint8.tmfileimage file : cat.jpgimg_h, img_w, scale[3], mean[3] : 227 227 , 0.017 0.017 0.017, 104.0 116.7 122.7Repeat 10 times, thread 1, avg time 2.95 ms, max_time 3.42 ms, min_time 2.76 ms--------------------------------------34.786182, 27833.942883, 28733.732056, 28032.045452, 27730.780502, 282
-</code></pre>
-<h3 id="x86上模拟计算">X86上模拟计算</h3>
-<p>支持X86_64。</p>
-<h4 id="1准备阶段-2">1.准备阶段</h4>
-<p>下载TIM-VX、Tengine-Lite源码：</p>
-<pre><code class="language-bash">git clone https://github.com/VeriSilicon/TIM-VX.gitgit clone https://github.com/OAID/Tengine.git tengine-lite
-</code></pre>
-<h4 id="2编译-2">2.编译</h4>
-<p>为安装对应依赖，首先进区Tengine-Lite文件夹：</p>
-<pre><code class="language-bash">cd tengine-lite
-</code></pre>
-<p>将TIM-VX中的对应依赖拷贝到Tengine-Lite项目中，详情可参考TIM-VX的3rdparty文件夹：</p>
-<pre><code class="language-bash">mkdir -p ./3rdparty/tim-vx/lib/x86_64mkdir -p ./3rdparty/tim-vx/includecp -rf ../TIM-VX/include/ *     ./3rdparty/tim-vx/include/cp -rf ../TIM-VX/src ./src/dev/tim-vx/cp -rf ../TIM-VX/prebuilt-sdk/x86_64_linux/include/ *     ./3rdparty/tim-vx/include/cp -rf ../TIM-VX/prebuilt-sdk/x86_64_linux/lib/ *     ./3rdparty/tim-vx/lib/x86_64/rm ./src/dev/tim-vx/src/tim/vx/ * _test.cc
-</code></pre>
-<p>编译指令如下：</p>
-<pre><code class="language-bash">mkdir build &amp;&amp; cd buildcmake -DTENGINE_ENABLE_TIM_VX=ON -DTENGINE_ENABLE_TIM_VX_INTEGRATION=ON ..make -j4make install
-</code></pre>
-<h4 id="3测试-2">3.测试</h4>
-<p>库路径如下：</p>
-<pre><code class="language-bash">3rdparty/tim-vx/lib/x86_64├── libArchModelSw.so├── libCLC.so├── libEmulator.so├── libGAL.so├── libNNArchPerf.so├── libOpenVXC.so├── libOpenVX.so -&gt; libOpenVX.so.1.3.0├── libOpenVX.so.1 -&gt; libOpenVX.so.1.3.0├── libOpenVX.so.1.3.0├── libOpenVXU.so├── libvdtproxy.so└── libVSC.sobuild/install/lib/└── libtengine-lite.so
-</code></pre>
-<p>int8模型量化：</p>
-<pre><code class="language-c++">/* set runtime options */struct options opt;opt.num_thread = num_thread;opt.cluster = TENGINE_CLUSTER_ALL;opt.precision = TENGINE_MODE_UINT8;opt.affinity = 0;
-</code></pre>
-<p>模型文件以及测试用的用图片在百度网盘链接中：</p>
-<pre><code class="language-bash">./tm_classification_timvx -m squeezenet_uint8.tmfile -i cat.jpg -r 1 -s 0.017,0.017,0.017 -r 10
-</code></pre>
-<p>terminal中的结果如下：</p>
-<pre><code class="language-bash">Tengine plugin allocator TIMVX is registered.Image height not specified, use default 227Image width not specified, use default  227Mean value not specified, use default   104.0, 116.7, 122.7tengine-lite library version: 1.2-devTIM-VX prerun.model file : /root/Desktop/NPU/tengine-lite/models/squeezenet_uint8.tmfileimage file : /root/Desktop/NPU/tengine-lite/image/cat.jpgimg_h, img_w, scale[3], mean[3] : 227 227 , 0.017 0.017 0.017, 104.0 116.7 122.7Repeat 10 times, thread 1, avg time 14431.41 ms, max_time 14699.82 ms, min_time 14213.30 ms--------------------------------------34.786182, 27833.942883, 28733.732056, 28031.834629, 27730.780502, 282--------------------------------------
-</code></pre>
-<p>X86上模拟的话速度还是很慢的，哈哈，需要等待一会，不过没有板子的话测试还是不错的了。</p>
 ]]></content>
     </entry>
 </feed>

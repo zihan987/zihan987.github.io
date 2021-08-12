@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>UART | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="USART是一个全双工通用同步/异步串行收发模块，该接口是一个高度灵活的串行通信设备。USART收发模块一般分为三大部分：时钟发生器、数据发送器和接收器。控制寄存器为所有的模块共享。
+
+MicroPython
+
+
+
+**Function
+D..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">UART</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://img0.baidu.com/it/u=2796851477,3244613759&amp;fm=26&amp;fmt=auto&amp;gp=0.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>USART是一个全双工通用同步/异步串行收发模块，该接口是一个高度灵活的串行通信设备。USART收发模块一般分为三大部分：<a href="https://baike.baidu.com/item/%E6%97%B6%E9%92%9F%E5%8F%91%E7%94%9F%E5%99%A8/9827742">时钟发生器</a>、数据发送器和接收器。控制<a href="https://baike.baidu.com/item/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>为所有的模块共享。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<table>
+<thead>
+<tr>
+<th>**Function</th>
+<th><strong>Default</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UART_BAUDRATE</td>
+<td>115,200</td>
+</tr>
+<tr>
+<td>UART_BITS</td>
+<td>8</td>
+</tr>
+<tr>
+<td>UART_STOP</td>
+<td>1</td>
+</tr>
+<tr>
+<td>UART0_TX</td>
+<td>Pin 0</td>
+</tr>
+<tr>
+<td>UART0_RX</td>
+<td>Pin 1</td>
+</tr>
+<tr>
+<td>UART1_TX</td>
+<td>Pin 4</td>
+</tr>
+<tr>
+<td>UART1_RX</td>
+<td>Pin 5</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">from machine import Pin
+from rp2 import PIO, StateMachine, asm_pio
+
+UART_BAUD = 115200
+PIN_BASE = 10
+NUM_UARTS = 8
+
+
+@asm_pio(sideset_init=PIO.OUT_HIGH, out_init=PIO.OUT_HIGH, out_shiftdir=PIO.SHIFT_RIGHT)
+def uart_tx():
+    # Block with TX deasserted until data available
+    pull()
+    # Initialise bit counter, assert start bit for 8 cycles
+    set(x, 7)  .side(0)       [7]
+    # Shift out 8 data bits, 8 execution cycles per bit
+    label(&quot;bitloop&quot;)
+    out(pins, 1)              [6]
+    jmp(x_dec, &quot;bitloop&quot;)
+    # Assert stop bit for 8 cycles total (incl 1 for pull())
+    nop()      .side(1)       [6]
+
+
+# Now we add 8 UART TXs, on pins 10 to 17. Use the same baud rate for all of them.
+uarts = []
+for i in range(NUM_UARTS):
+    sm = StateMachine(
+        i, uart_tx, freq=8 * UART_BAUD, sideset_base=Pin(PIN_BASE + i), out_base=Pin(PIN_BASE + i)
+    )
+    sm.active(1)
+    uarts.append(sm)
+
+# We can print characters from each UART by pushing them to the TX FIFO
+def pio_uart_print(sm, s):
+    for c in s:
+        sm.put(ord(c))
+
+
+# Print a different message from each UART
+for i, u in enumerate(uarts):
+    pio_uart_print(u, &quot;Hello from UART {}!\n&quot;.format(i))
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>以下为测试demo：</p>
+<pre><code class="language-c">#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/uart.h&quot;
+#include &quot;hardware/irq.h&quot;
+
+
+/// \tag::uart_advanced[]
+
+#define UART_ID uart0
+#define BAUD_RATE 115200
+#define DATA_BITS 8
+#define STOP_BITS 1
+#define PARITY    UART_PARITY_NONE
+
+// We are using pins 0 and 1, but see the GPIO function select table in the
+// datasheet for information on which other pins can be used.
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
+
+static int chars_rxed = 0;
+
+// RX interrupt handler
+void on_uart_rx() {
+    while (uart_is_readable(UART_ID)) {
+        uint8_t ch = uart_getc(UART_ID);
+        // Can we send it back?
+        if (uart_is_writable(UART_ID)) {
+            // Change it slightly first!
+            ch++;
+            uart_putc(UART_ID, ch);
+        }
+        chars_rxed++;
+    }
+}
+
+int main() {
+    // Set up our UART with a basic baud rate.
+    uart_init(UART_ID, 2400);
+
+    // Set the TX and RX pins by using the function select on the GPIO
+    // Set datasheet for more information on function select
+    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+
+    // Actually, we want a different speed
+    // The call will return the actual baud rate selected, which will be as close as
+    // possible to that requested
+    int actual = uart_set_baudrate(UART_ID, BAUD_RATE);
+
+    // Set UART flow control CTS/RTS, we don't want these, so turn them off
+    uart_set_hw_flow(UART_ID, false, false);
+
+    // Set our data format
+    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+
+    // Turn off FIFO's - we want to do this character by character
+    uart_set_fifo_enabled(UART_ID, false);
+
+    // Set up a RX interrupt
+    // We need to set up the handler first
+    // Select correct interrupt for the UART we are using
+    int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
+
+    // And set up and enable the interrupt handlers
+    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+    irq_set_enabled(UART_IRQ, true);
+
+    // Now enable the UART to send interrupts - RX only
+    uart_set_irq_enables(UART_ID, true, false);
+
+    // OK, all set up.
+    // Lets send a basic string out, and then run a loop and wait for RX interrupts
+    // The handler will count them, but also reflect the incoming data back with a slight change!
+    uart_puts(UART_ID, &quot;\nHello, uart interrupts\n&quot;);
+
+    while (1)
+        tight_loop_contents();
+}
+</code></pre>
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">add_executable(uart_advanced
+        uart_advanced.c
+        )
+
+# Pull in our pico_stdlib which pulls in commonly used features
+target_link_libraries(uart_advanced pico_stdlib hardware_uart)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(uart_advanced)
+
+# add url via pico_set_program_url
+example_auto_set_url(uart_advanced)
+</code></pre>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/io-de-shi-yong/">
+                  <h3 class="post-title">
+                    IO的使用
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

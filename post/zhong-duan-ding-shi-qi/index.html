@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>中断、定时器 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="中断和定时器是CPU必不可少的部分，详细的介绍这里不过多赘述，我们直接看一下代码。定时器的代码主要结合C去讲解，这样比较清楚。
+
+MicroPython
+中断
+from machine import Pin
+
+p2 = Pin(2, Pin..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">中断、定时器</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://img2.baidu.com/it/u=986804445,2810822501&amp;fm=26&amp;fmt=auto&amp;gp=0.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>中断和定时器是CPU必不可少的部分，详细的介绍这里不过多赘述，我们直接看一下代码。定时器的代码主要结合C去讲解，这样比较清楚。</p>
+<!-- more -->
+<h3 id="micropython">MicroPython</h3>
+<p>中断</p>
+<pre><code class="language-python">from machine import Pin
+
+p2 = Pin(2, Pin.IN, Pin.PULL_UP)
+p2.irq(lambda pin: print(&quot;IRQ with flags:&quot;, pin.irq().flags()),
+Pin.IRQ_FALLING)
+</code></pre>
+<h3 id="cc">C/C++</h3>
+<p>定时器功能也很基础,而且只有一个,主要功能如下:</p>
+<ul>
+<li>64位计数器 (频率固定1MHz,所以要好几千年才能溢出)</li>
+<li>4个闹钟 (闹钟是只匹配低32B,最大间隔4295秒)</li>
+<li>寄存器自带映射,所以多个处理器同时访问也不用考虑竞争问题(无需考虑竞争问题)</li>
+</ul>
+<p>其中ALARM功能只会发起一次中断,中断发生后就会清除ARMED位,所有函数都有他的毫秒版本和微秒版本。</p>
+<pre><code class="language-C">#include &lt;stdio.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;pico/util/queue.h&quot;
+
+bool timer_callback(repeating_timer_t *rt);
+
+queue_t sample_fifo;
+
+// using struct as an example, but primitive types can be used too
+typedef struct element {
+    uint value;
+} element_t;
+
+const int FIFO_LENGTH = 32;
+
+int main() {
+    stdio_init_all();
+
+    int hz = 25;
+
+    queue_init(&amp;sample_fifo, sizeof(element_t), FIFO_LENGTH);
+
+    repeating_timer_t timer;
+
+    // negative timeout means exact delay (rather than delay between callbacks)
+    if (!add_repeating_timer_us(-1000000 / hz, timer_callback, NULL, &amp;timer)) {
+        printf(&quot;Failed to add timer\n&quot;);
+        return 1;
+    }
+
+    // read some blocking
+
+    for (int i = 0; i &lt; 10; i++) {
+        element_t element;
+        queue_remove_blocking(&amp;sample_fifo, &amp;element);
+        printf(&quot;Got %d: %d\n&quot;, i, element.value);
+    }
+
+    // now retrieve all that are available periodically (simulate polling)
+    for (int i = 0; i &lt; 10; i++) {
+        int count = queue_get_level(&amp;sample_fifo);
+        if (count) {
+            printf(&quot;Getting %d, %d:\n&quot;, i, count);
+            for (; count &gt; 0; count--) {
+                element_t element;
+                queue_remove_blocking(&amp;sample_fifo, &amp;element);
+                printf(&quot;  got %d\n&quot;, element.value);
+            }
+        }
+        sleep_us(5000000 / hz); // sleep for 5 times the sampling period
+    }
+
+    cancel_repeating_timer(&amp;timer);
+
+    // drain any remaining
+    element_t element;
+    while (queue_try_remove(&amp;sample_fifo, &amp;element)) {
+        printf(&quot;Got remaining %d\n&quot;, element.value);
+    }
+
+    queue_free(&amp;sample_fifo);
+    printf(&quot;Done\n&quot;);
+}
+
+bool timer_callback(repeating_timer_t *rt) {
+    static int v = 100;
+    element_t element = {
+            .value = v
+    };
+    v += 100;
+
+    if (!queue_try_add(&amp;sample_fifo, &amp;element)) {
+        printf(&quot;FIFO was full\n&quot;);
+    }
+    return true; // keep repeating
+}
+</code></pre>
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">if (NOT PICO_TIME_NO_ALARM_SUPPORT)
+    add_executable(periodic_sampler
+            periodic_sampler.c
+            )
+
+    # Pull in our (to be renamed) simple get you started dependencies
+    target_link_libraries(periodic_sampler pico_stdlib)
+
+    # create map/bin/hex file etc.
+    pico_add_extra_outputs(periodic_sampler)
+
+    # add url via pico_set_program_url
+    example_auto_set_url(periodic_sampler)
+endif()
+</code></pre>
+<p>lowlevel:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/timer.h&quot;
+#include &quot;hardware/irq.h&quot;
+
+/// \tag::get_time[]
+// Simplest form of getting 64 bit time from the timer.
+// It isn't safe when called from 2 cores because of the latching
+// so isn't implemented this way in the sdk
+static uint64_t get_time(void) {
+    // Reading low latches the high value
+    uint32_t lo = timer_hw-&gt;timelr;
+    uint32_t hi = timer_hw-&gt;timehr;
+    return ((uint64_t) hi &lt;&lt; 32u) | lo;
+}
+/// \end::get_time[]
+
+/// \tag::alarm_standalone[]
+// Use alarm 0
+#define ALARM_NUM 0
+#define ALARM_IRQ TIMER_IRQ_0
+
+// Alarm interrupt handler
+static volatile bool alarm_fired;
+
+static void alarm_irq(void) {
+    // Clear the alarm irq
+    hw_clear_bits(&amp;timer_hw-&gt;intr, 1u &lt;&lt; ALARM_NUM);
+
+    // Assume alarm 0 has fired
+    printf(&quot;Alarm IRQ fired\n&quot;);
+    alarm_fired = true;
+}
+
+static void alarm_in_us(uint32_t delay_us) {
+    // Enable the interrupt for our alarm (the timer outputs 4 alarm irqs)
+    hw_set_bits(&amp;timer_hw-&gt;inte, 1u &lt;&lt; ALARM_NUM);
+    // Set irq handler for alarm irq
+    irq_set_exclusive_handler(ALARM_IRQ, alarm_irq);
+    // Enable the alarm irq
+    irq_set_enabled(ALARM_IRQ, true);
+    // Enable interrupt in block and at processor
+
+    // Alarm is only 32 bits so if trying to delay more
+    // than that need to be careful and keep track of the upper
+    // bits
+    uint64_t target = timer_hw-&gt;timerawl + delay_us;
+
+    // Write the lower 32 bits of the target time to the alarm which
+    // will arm it
+    timer_hw-&gt;alarm[ALARM_NUM] = (uint32_t) target;
+}
+
+int main() {
+    stdio_init_all();
+    printf(&quot;Timer lowlevel!\n&quot;);
+
+    // Set alarm every 2 seconds
+    while (1) {
+        alarm_fired = false;
+        alarm_in_us(1000000 * 2);
+        // Wait for alarm to fire
+        while (!alarm_fired);
+    }
+}
+</code></pre>
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">if (PICO_ON_DEVICE)
+    add_executable(timer_lowlevel
+            timer_lowlevel.c)
+
+    # Disable SDK alarm support for this lowlevel example
+    set(PICO_TIME_DEFAULT_ALARM_POOL_DISABLED 1)
+
+    target_link_libraries(timer_lowlevel pico_stdlib)
+
+    # create map/bin/hex file etc.
+    pico_add_extra_outputs(timer_lowlevel)
+
+    # add url via pico_set_program_url
+    example_auto_set_url(timer_lowlevel)
+endif ()
+</code></pre>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/uart/">
+                  <h3 class="post-title">
+                    UART
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

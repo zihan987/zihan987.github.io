@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>WS2812 LED | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="WS2812 LED是一种全彩的LED，我们平时看到的很多彩灯以及点阵就是这样的，因此第一个实践案例用来做这个真的不错。
+
+电气接线图：
+
+材料清单：
+
+
+
+元器件
+数量
+
+
+
+
+Raspberry Pi Pico
+1
+
+
+WS2812 L..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">WS2812 LED</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/WSB.jpg?raw=true')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>WS2812 LED是一种全彩的LED，我们平时看到的很多彩灯以及点阵就是这样的，因此第一个实践案例用来做这个真的不错。</p>
+<!-- more -->
+<p>电气接线图：</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/WSB2.png?raw=true" alt="WSB2.png" loading="lazy"></figure>
+<p>材料清单：</p>
+<table>
+<thead>
+<tr>
+<th>元器件</th>
+<th>数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raspberry Pi Pico</td>
+<td>1</td>
+</tr>
+<tr>
+<td>WS2812 LED</td>
+<td>1</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>demo程序：</p>
+<pre><code class="language-python">import array, time
+from machine import Pin
+import rp2
+
+# Configure the number of WS2812 LEDs.
+NUM_LEDS = 16
+PIN_NUM = 6
+brightness = 0.2
+
+@rp2.asm_pio(sideset_init=rp2.PIO.OUT_LOW, out_shiftdir=rp2.PIO.SHIFT_LEFT, autopull=True, pull_thresh=24)
+def ws2812():
+    T1 = 2
+    T2 = 5
+    T3 = 3
+    wrap_target()
+    label(&quot;bitloop&quot;)
+    out(x, 1)               .side(0)    [T3 - 1]
+    jmp(not_x, &quot;do_zero&quot;)   .side(1)    [T1 - 1]
+    jmp(&quot;bitloop&quot;)          .side(1)    [T2 - 1]
+    label(&quot;do_zero&quot;)
+    nop()                   .side(0)    [T2 - 1]
+    wrap()
+
+
+# Create the StateMachine with the ws2812 program, outputting on pin
+sm = rp2.StateMachine(0, ws2812, freq=8_000_000, sideset_base=Pin(PIN_NUM))
+
+# Start the StateMachine, it will wait for data on its FIFO.
+sm.active(1)
+
+# Display a pattern on the LEDs via an array of LED RGB values.
+ar = array.array(&quot;I&quot;, [0 for _ in range(NUM_LEDS)])
+
+##########################################################################
+def pixels_show():
+    dimmer_ar = array.array(&quot;I&quot;, [0 for _ in range(NUM_LEDS)])
+    for i,c in enumerate(ar):
+        r = int(((c &gt;&gt; 8) &amp; 0xFF) * brightness)
+        g = int(((c &gt;&gt; 16) &amp; 0xFF) * brightness)
+        b = int((c &amp; 0xFF) * brightness)
+        dimmer_ar[i] = (g&lt;&lt;16) + (r&lt;&lt;8) + b
+    sm.put(dimmer_ar, 8)
+    time.sleep_ms(10)
+
+def pixels_set(i, color):
+    ar[i] = (color[1]&lt;&lt;16) + (color[0]&lt;&lt;8) + color[2]
+
+def pixels_fill(color):
+    for i in range(len(ar)):
+        pixels_set(i, color)
+
+def color_chase(color, wait):
+    for i in range(NUM_LEDS):
+        pixels_set(i, color)
+        time.sleep(wait)
+        pixels_show()
+    time.sleep(0.2)
+ 
+def wheel(pos):
+    # Input a value 0 to 255 to get a color value.
+    # The colours are a transition r - g - b - back to r.
+    if pos &lt; 0 or pos &gt; 255:
+        return (0, 0, 0)
+    if pos &lt; 85:
+        return (255 - pos * 3, pos * 3, 0)
+    if pos &lt; 170:
+        pos -= 85
+        return (0, 255 - pos * 3, pos * 3)
+    pos -= 170
+    return (pos * 3, 0, 255 - pos * 3)
+ 
+ 
+def rainbow_cycle(wait):
+    for j in range(255):
+        for i in range(NUM_LEDS):
+            rc_index = (i * 256 // NUM_LEDS) + j
+            pixels_set(i, wheel(rc_index &amp; 255))
+        pixels_show()
+        time.sleep(wait)
+
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+YELLOW = (255, 150, 0)
+GREEN = (0, 255, 0)
+CYAN = (0, 255, 255)
+BLUE = (0, 0, 255)
+PURPLE = (180, 0, 255)
+WHITE = (255, 255, 255)
+COLORS = (BLACK, RED, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE)
+
+print(&quot;fills&quot;)
+for color in COLORS:       
+    pixels_fill(color)
+    pixels_show()
+    time.sleep(0.2)
+
+print(&quot;chases&quot;)
+for color in COLORS:       
+    color_chase(color, 0.01)
+
+print(&quot;rainbow&quot;)
+rainbow_cycle(0)
+</code></pre>
+<p>效果：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/wsb1.png?raw=true" alt="wsb1.png" loading="lazy"></figure>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/pwm/">
+                  <h3 class="post-title">
+                    PWM
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

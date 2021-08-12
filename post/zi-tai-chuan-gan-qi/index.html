@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>姿态传感器 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="平衡车、手机体感、旋翼无人机的平衡主要靠陀螺模组，MPU9250是一款常用的9轴姿态测量单元。MPU9250有两个内部时钟源，以及一个PLL。
+
+
+
+
+时钟源
+说明
+
+
+
+
+内部振荡器
+功耗低，但时钟精度略差
+
+
+X,Y或Z方向的Gyro
+..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">姿态传感器</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://img1.baidu.com/it/u=2275610950,1289654901&amp;fm=26&amp;fmt=auto&amp;gp=0.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>平衡车、手机体感、旋翼无人机的平衡主要靠陀螺模组，MPU9250是一款常用的9轴姿态测量单元。MPU9250有两个内部时钟源，以及一个PLL。</p>
+<!-- more -->
+<table>
+<thead>
+<tr>
+<th>时钟源</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内部振荡器</td>
+<td>功耗低，但时钟精度略差</td>
+</tr>
+<tr>
+<td>X,Y或Z方向的Gyro</td>
+<td>MEMS时钟，功耗较高，但时钟精确（只要Gyro一经启用，就会使用该时钟源）</td>
+</tr>
+</tbody>
+</table>
+<p>时钟的选择需要综合平衡 时钟精度和功耗两个因素，所以从MPU9250的性能参数可以看到，一旦Gyro开启，功耗都是在mA级别，而加速度计和磁力计都是在uA级别的功耗。</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/MPU9250.jpeg?raw=true" alt="MPU9250.jpeg" loading="lazy"></figure>
+<p>电气元件：</p>
+<table>
+<thead>
+<tr>
+<th>元器件</th>
+<th>数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MPU9250</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Raspberry Pi Pico</td>
+<td>1</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>电气接线图：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/mpu9250_spi_bb.png?raw=true" alt="mpu9250_spi_bb.png" loading="lazy"></figure>
+<p>demo：</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/spi.h&quot;
+
+#define PIN_MISO 4
+#define PIN_CS   5
+#define PIN_SCK  6
+#define PIN_MOSI 7
+
+#define SPI_PORT spi0
+#define READ_BIT 0x80
+
+static inline void cs_select() {
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+    gpio_put(PIN_CS, 0);  // Active low
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+}
+
+static inline void cs_deselect() {
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+    gpio_put(PIN_CS, 1);
+    asm volatile(&quot;nop \n nop \n nop&quot;);
+}
+
+static void mpu9250_reset() {
+    // Two byte reset. First byte register, second byte data
+    // There are a load more options to set up the device in different ways that could be added here
+    uint8_t buf[] = {0x6B, 0x00};
+    cs_select();
+    spi_write_blocking(SPI_PORT, buf, 2);
+    cs_deselect();
+}
+
+
+static void read_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
+
+    reg |= READ_BIT;
+    cs_select();
+    spi_write_blocking(SPI_PORT, &amp;reg, 1);
+    sleep_ms(10);
+    spi_read_blocking(SPI_PORT, 0, buf, len);
+    cs_deselect();
+    sleep_ms(10);
+}
+
+
+static void mpu9250_read_raw(int16_t accel[3], int16_t gyro[3], int16_t *temp) {
+    uint8_t buffer[6];
+
+    // Start reading acceleration registers from register 0x3B for 6 bytes
+    read_registers(0x3B, buffer, 6);
+
+    for (int i = 0; i &lt; 3; i++) {
+        accel[i] = (buffer[i * 2] &lt;&lt; 8 | buffer[(i * 2) + 1]);
+    }
+
+    // Now gyro data from reg 0x43 for 6 bytes
+    read_registers(0x43, buffer, 6);
+
+    for (int i = 0; i &lt; 3; i++) {
+        gyro[i] = (buffer[i * 2] &lt;&lt; 8 | buffer[(i * 2) + 1]);;
+    }
+
+    // Now temperature from reg 0x41 for 2 bytes
+    read_registers(0x41, buffer, 2);
+
+    *temp = buffer[0] &lt;&lt; 8 | buffer[1];
+}
+
+int main() {
+    stdio_init_all();
+
+    printf(&quot;Hello, MPU9250! Reading raw data from registers via SPI...\n&quot;);
+
+    // This example will use SPI0 at 0.5MHz.
+    spi_init(SPI_PORT, 500 * 1000);
+    gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+
+    // Chip select is active-low, so we'll initialise it to a driven-high state
+    gpio_init(PIN_CS);
+    gpio_set_dir(PIN_CS, GPIO_OUT);
+    gpio_put(PIN_CS, 1);
+
+    mpu9250_reset();
+
+    // See if SPI is working - interrograte the device for its I2C ID number, should be 0x71
+    uint8_t id;
+    read_registers(0x75, &amp;id, 1);
+    printf(&quot;I2C address is 0x%x\n&quot;, id);
+
+    int16_t acceleration[3], gyro[3], temp;
+
+    while (1) {
+        mpu9250_read_raw(acceleration, gyro, &amp;temp);
+
+        // These are the raw numbers from the chip, so will need tweaking to be really useful.
+        // See the datasheet for more information
+        printf(&quot;Acc. X = %d, Y = %d, Z = %d\n&quot;, acceleration[0], acceleration[1], acceleration[2]);
+        printf(&quot;Gyro. X = %d, Y = %d, Z = %d\n&quot;, gyro[0], gyro[1], gyro[2]);
+        // Temperature is simple so use the datasheet calculation to get deg C.
+        // Note this is chip temperature.
+        printf(&quot;Temp. = %f\n&quot;, (temp / 340.0) + 36.53);
+
+        sleep_ms(100);
+    }
+
+    return 0;
+}
+</code></pre>
+<p>CMakeLists.txt:</p>
+<pre><code class="language-cmake">add_executable(mpu9250_spi
+        mpu9250_spi.c
+        )
+
+# Pull in our (to be renamed) simple get you started dependencies
+target_link_libraries(mpu9250_spi pico_stdlib hardware_spi)
+
+# create map/bin/hex file etc.
+pico_add_extra_outputs(mpu9250_spi)
+
+# add url via pico_set_program_url
+example_auto_set_url(mpu9250_spi)
+</code></pre>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/wen-shi-du-chuan-gan-qi/">
+                  <h3 class="post-title">
+                    温湿度传感器
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

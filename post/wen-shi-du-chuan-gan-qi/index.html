@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>温湿度传感器 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="DHT11、DHT21系列的传感器小伙伴们一定很熟悉，单片机一接，写个小的APP，可以做个小型的室内温湿度监测系统。
+
+材料清单：
+
+
+
+元器件名称
+数量
+
+
+
+
+DHT11
+1
+
+
+Respberry Pi Pico
+1
+
+
+10k电阻
+..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">温湿度传感器</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/DHT11.jpg?raw=true')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>DHT11、DHT21系列的传感器小伙伴们一定很熟悉，单片机一接，写个小的APP，可以做个小型的室内温湿度监测系统。</p>
+<!-- more -->
+<p>材料清单：</p>
+<table>
+<thead>
+<tr>
+<th>元器件名称</th>
+<th>数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DHT11</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Respberry Pi Pico</td>
+<td>1</td>
+</tr>
+<tr>
+<td>10k电阻</td>
+<td>1</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>电气接线图：</p>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/pi-and-pico-uart-and-dht-sensor.png?raw=true" alt="pi-and-pico-uart-and-dht-sensor.png" loading="lazy"></figure>
+<p>Demo:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;math.h&gt;
+#include &quot;pico/stdlib.h&quot;
+#include &quot;hardware/gpio.h&quot;
+
+const uint LED_PIN = PICO_DEFAULT_LED_PIN;
+const uint DHT_PIN = 15;
+const uint MAX_TIMINGS = 85;
+
+typedef struct {
+    float humidity;
+    float temp_celsius;
+} dht_reading;
+
+void read_from_dht(dht_reading *result);
+
+int main() {
+    stdio_init_all();
+    gpio_init(LED_PIN);
+    gpio_init(DHT_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+    while (1) {
+        dht_reading reading;
+        read_from_dht(&amp;reading);
+        float fahrenheit = (reading.temp_celsius * 9 / 5) + 32;
+        printf(&quot;Humidity = %.1f%%, Temperature = %.1fC (%.1fF)\n&quot;,
+               reading.humidity, reading.temp_celsius, fahrenheit);
+
+        sleep_ms(2000);
+    }
+}
+
+void read_from_dht(dht_reading *result) {
+    int data[5] = {0, 0, 0, 0, 0};
+    uint last = 1;
+    uint j = 0;
+
+    gpio_set_dir(DHT_PIN, GPIO_OUT);
+    gpio_put(DHT_PIN, 0);
+    sleep_ms(20);
+    gpio_set_dir(DHT_PIN, GPIO_IN);
+
+    gpio_put(LED_PIN, 1);
+    for (uint i = 0; i &lt; MAX_TIMINGS; i++) {
+        uint count = 0;
+        while (gpio_get(DHT_PIN) == last) {
+            count++;
+            sleep_us(1);
+            if (count == 255) break;
+        }
+        last = gpio_get(DHT_PIN);
+        if (count == 255) break;
+
+        if ((i &gt;= 4) &amp;&amp; (i % 2 == 0)) {
+            data[j / 8] &lt;&lt;= 1;
+            if (count &gt; 16) data[j / 8] |= 1;
+            j++;
+        }
+    }
+    gpio_put(LED_PIN, 0);
+
+    if ((j &gt;= 40) &amp;&amp; (data[4] == ((data[0] + data[1] + data[2] + data[3]) &amp; 0xFF))) {
+        result-&gt;humidity = (float) ((data[0] &lt;&lt; 8) + data[1]) / 10;
+        if (result-&gt;humidity &gt; 100) {
+            result-&gt;humidity = data[0];
+        }
+        result-&gt;temp_celsius = (float) (((data[2] &amp; 0x7F) &lt;&lt; 8) + data[3]) / 10;
+        if (result-&gt;temp_celsius &gt; 125) {
+            result-&gt;temp_celsius = data[2];
+        }
+        if (data[2] &amp; 0x80) {
+            result-&gt;temp_celsius = -result-&gt;temp_celsius;
+        }
+    } else {
+        printf(&quot;Bad data\n&quot;);
+    }
+}
+</code></pre>
+<p>CMakelist.txt:</p>
+<pre><code class="language-cmake">add_executable(dht
+        dht.c
+        )
+
+target_link_libraries(dht pico_stdlib)
+
+pico_add_extra_outputs(dht)
+
+# add url via pico_set_program_url
+example_auto_set_url(dht)
+</code></pre>
+<p>终端的输出如下：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/DHT1.jpg?raw=true" alt="DHT1.jpg" loading="lazy"></figure>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/ws2812-led/">
+                  <h3 class="post-title">
+                    WS2812 LED
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

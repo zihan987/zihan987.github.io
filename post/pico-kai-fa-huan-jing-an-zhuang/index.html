@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>PICO开发环境安装 | 阿chai带你学AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://zihan987.github.io/favicon.ico?v=1628746719373">
+<link rel="stylesheet" href="https://zihan987.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Pico可以在电脑和树莓派上做开发，阿chai在这里主要介绍在电脑上的开发环境，分为C版本与MicroPython版。阿chai建议大家使用MicroPython版本。
+
+MicroPython环境搭建
+首先需要刷固件。
+可将USB将Pic..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://zihan987.github.io">
+        <img src="https://zihan987.github.io/images/avatar.png?v=1628746719373" class="site-logo">
+        <h1 class="site-title">阿chai带你学AI</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://github.com/zihan987" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      让我们一起chai哩chai气
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/zihan987" target="_blank">紫涵</a> | <a class="rss" href="https://zihan987.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">PICO开发环境安装</h2>
+            <div class="post-date">2021-08-12</div>
+            
+              <div class="feature-container" style="background-image: url('https://img2.baidu.com/it/u=1861800022,3571533569&amp;fm=26&amp;fmt=auto&amp;gp=0.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>Pico可以在电脑和树莓派上做开发，阿chai在这里主要介绍在电脑上的开发环境，分为C版本与MicroPython版。阿chai建议大家使用MicroPython版本。</p>
+<!-- more -->
+<h3 id="micropython环境搭建">MicroPython环境搭建</h3>
+<p>首先需要刷固件。</p>
+<p>可将USB将Pico连接到计算机，然后将文件拖放到其中来对Pico进行编程，官方整理了一个可<a href="https://micropython.org/download/rp2-pico/">下载的UF2</a>文件。</p>
+<ol>
+<li>下载MicroPython UF2文件。</li>
+<li>按住BOOTSEL按钮，然后将Pico插入Raspberry Pi或其他计算机的USB端口。连接Pico后，释放BOOTSEL按钮。</li>
+<li>它将安装为称为RPI-RP2的大容量存储设备。</li>
+<li>将MicroPython UF2文件拖放到RPI-RP2卷上。您的Pico将重新启动。您现在正在运行MicroPython。</li>
+</ol>
+<figure data-type="image" tabindex="1"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/pico.gif?raw=true" alt="pico.gif" loading="lazy"></figure>
+<p>上图中的IDE是官方推荐使用Thonny，但是阿chai还是喜欢VSCode，那么下面介绍一下VSCode中搭建环境。</p>
+<p>调试工具与使用：</p>
+<pre><code class="language-bash">$ brew install minicom
+$ minicom -b 115200 -o -D /dev/cu.usbmodem0000000000001
+</code></pre>
+<p>安装MicroPython的插件：</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/mpython.jpg?raw=true" alt="mpython.jpg" loading="lazy"></figure>
+<p>因为upload项目是需要使用串口的，因此我们进行串口配置：</p>
+<pre><code class="language-bash"># 查看groups
+$ groups
+
+# 添加
+$ sudo usermod --append --groups dialout tux
+</code></pre>
+<p>使用如下代码进行测试可以看到LED的闪烁。</p>
+<pre><code class="language-python">from machine import Pin, Timer
+
+led = Pin(25, Pin.OUT)
+tim = Timer()
+def tick(timer):
+    global led
+    led.toggle()
+
+tim.init(freq=2.5, mode=Timer.PERIODIC, callback=tick)
+</code></pre>
+<h3 id="cc-sdk">C/C++ SDK</h3>
+<p>C/C++版本的程序比较偏向底层，开发需具备嵌入式相关知识。</p>
+<p>首先我们下载代码并安装对应的SDK。</p>
+<pre><code class="language-bash">$ git clone -b master https://github.com/raspberrypi/pico-sdk.git
+$ cd pico-sdk
+$ git submodule update --init
+$ cd ..
+$ git clone -b master https://github.com/raspberrypi/pico-examples.git
+</code></pre>
+<p>添加环境变量：</p>
+<pre><code class="language-bash">export PICO_SDK_PATH=自己设置的pico-sdk路径 
+</code></pre>
+<p>调试工具与使用：</p>
+<pre><code class="language-bash">$ brew install minicom
+$ minicom -b 115200 -o -D /dev/cu.usbmodem0000000000001
+</code></pre>
+<p>在VSCode中安装cmake tools：</p>
+<figure data-type="image" tabindex="3"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/cmake%20tools.jpg?raw=true" alt="cmake tools.jpg" loading="lazy"></figure>
+<p>settings中找到CMake Tools configure ，点击 CMake Tools configure 选项，往下拉， 找到 Configure Environment 、 点击添加项， 在项中写 PICO_MDK_PATH 在值中填入 SDK 的安装路径。</p>
+<figure data-type="image" tabindex="4"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/cmake_config1.jpg?raw=true" alt="cmake_config1.jpg" loading="lazy"></figure>
+<p>Cmake: Generator 中填写 NMake Makefiles。</p>
+<figure data-type="image" tabindex="5"><img src="https://github.com/zihan987/Raspberry-Pi-Pico/blob/main/images/cmake_config2.jpg?raw=true" alt="cmake_config2.jpg" loading="lazy"></figure>
+<p>安装交叉编译工具：</p>
+<pre><code class="language-bash">$ brew install cmake
+$ brew tap ArmMbed/homebrew-formulae
+$ brew install arm-none-eabi-gcc
+</code></pre>
+<p>在VSCode顶部的导航栏中选择arm的交叉编译工具即可使用。</p>
+<p>可使用如下的程序进行测试：</p>
+<pre><code class="language-c">#include &quot;pico/stdlib.h&quot;
+
+int main() {
+    const uint LED_PIN = 25;
+    gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+    while (true) {
+        gpio_put(LED_PIN, 1);
+        sleep_ms(250);
+        gpio_put(LED_PIN, 0);
+        sleep_ms(250);
+    }
+}
+</code></pre>
+<p>CMakeLists.txt如下：</p>
+<pre><code class="language-cmake">add_executable(blink
+        blink.c
+        )
+target_link_libraries(blink pico_stdlib)
+pico_add_extra_outputs(blink)
+example_auto_set_url(blink)
+</code></pre>
+<p>在 bulid 文件夹中找到对应的编译生成文件 bin elf u2f 。将 U2f 拖入到 Pico 识别出的磁盘中可以看到LED的闪烁。</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://zihan987.github.io/post/vslam-zhong-ti-chu-dong-tai-mu-biao-de-shi-jue-li-cheng-ji/">
+                  <h3 class="post-title">
+                    VSLAM中剔除动态目标的视觉里程计
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>
