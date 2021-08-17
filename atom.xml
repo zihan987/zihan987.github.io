@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zihan987.github.io</id>
     <title>阿chai带你学AI</title>
-    <updated>2021-08-12T13:08:03.024Z</updated>
+    <updated>2021-08-17T08:59:34.831Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://zihan987.github.io"/>
     <link rel="self" href="https://zihan987.github.io/atom.xml"/>
@@ -10,6 +10,68 @@
     <logo>https://zihan987.github.io/images/avatar.png</logo>
     <icon>https://zihan987.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 阿chai带你学AI</rights>
+    <entry>
+        <title type="html"><![CDATA[论文分享：基于场景的自动驾驶汽车自动化安全测试的方法]]></title>
+        <id>https://zihan987.github.io/post/lun-wen-fen-xiang-ji-yu-chang-jing-de-zi-dong-jia-shi-qi-che-zi-dong-hua-an-quan-ce-shi-de-fang-fa/</id>
+        <link href="https://zihan987.github.io/post/lun-wen-fen-xiang-ji-yu-chang-jing-de-zi-dong-jia-shi-qi-che-zi-dong-hua-an-quan-ce-shi-de-fang-fa/">
+        </link>
+        <updated>2021-08-17T08:54:07.000Z</updated>
+        <summary type="html"><![CDATA[<p>今天给大家分享一篇加州大学伯克利学校的paper，文中以LGSVL仿真器为例，提出一种基于场景的自动驾驶汽车自动化安全测试的方法，尤其针对AI模组模拟仿真评估和真实驾驶测试。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>今天给大家分享一篇加州大学伯克利学校的paper，文中以LGSVL仿真器为例，提出一种基于场景的自动驾驶汽车自动化安全测试的方法，尤其针对AI模组模拟仿真评估和真实驾驶测试。</p>
+<!-- more -->
+<p>可以通过根据碰撞数据分析和自然驾驶数据分析创建的场景来构建测试集，这些场景利用人类驾驶数据来生成测试场景。</p>
+<p>paper链接：<a href="https://www.aliyundrive.com/s/Wvq56JtXXRA">https://www.aliyundrive.com/s/Wvq56JtXXRA</a></p>
+<p>ASAM规定了ADAS仿真场景准：<strong>OpenDRIVE</strong>、<strong>OpenSCENARIO</strong>、<strong>OpenCRG</strong>。分别对应静态路网、动态场景、路面材质。三者联合组成专用ADAS测试的场景库。</p>
+<h3 id="1-仿真工具">1. 仿真工具</h3>
+<p><strong>OpenSCENARIO</strong> 定义了一种文件格式，基于可扩展标记语言 (extensible markup language，XML)描述驾驶和交通模拟器的动态内容。</p>
+<p>伯克利提出一种高级语言<strong>SCENIC</strong>，对比<strong>M-SDL</strong>可测场景描述语言是最近的一种类似于 SCENIC 更高级 DSL，但对于概率、几何建模的支持不如<strong>SCENIC</strong>。</p>
+<p>伯克利开源<strong>VERIFAI</strong>工具包，提供了一个统一框架来设计和分析基于AI/ML的cyber-physical系统，VERIFAI 首先明确定义参数范围，或可以用SCENIC 语言来参数化感兴趣的环境空间和系统配置。工具包的地址如下。</p>
+<p><a href="https://link.zhihu.com/?target=https%3A//github.com/lgsvl/simulator">https://link.zhihu.com/?target=https%3A//github.com/lgsvl/simulator</a></p>
+<h3 id="2-仿真步骤">2. 仿真步骤</h3>
+<figure data-type="image" tabindex="1"><img src="https://zihan987.github.io/post-images/1629190605780.png" alt="" loading="lazy"></figure>
+<h4 id="a-环境构建">a. 环境构建</h4>
+<p>使用LGSVL仿真作为仿真场景的搭建软件，环境通过收集数百GB的激光雷达点云、相机图像和位置数据创建，所有的数据转化为3D网格。网格被加载到 LGSVL 模拟器去注释可行驶区域的细节，包括车道线、人行横道、交通标志等。</p>
+<figure data-type="image" tabindex="2"><img src="https://zihan987.github.io/post-images/1629190620236.png" alt="" loading="lazy"></figure>
+<p>上图为场景的BEV图，自驾车在十字路口右转，遇到一个犹豫不决地过马路的行人，自动驾驶系统控制车辆直接通过。</p>
+<h4 id="b仿真脚本">b.仿真脚本</h4>
+<p>如下为测试场景编码的<strong>SCENIC</strong>程序：</p>
+<pre><code class="language-python">ego = TgoCar at 38.6 @ 183.9,
+			facing 10 deg relative to roadDirection,
+			with behavior DriverTo(40 @ 225.2)
+ped = Pedestrian at 19.782 @ 225.680,
+			facting 90 deg relative to roadDirection,
+  		with behavior hesitate,
+      with startDelay (7, 15),
+      with walkDistance (4, 7),
+      with hesitateTime (1, 3)
+</code></pre>
+<h4 id="c场景生成">c.场景生成</h4>
+<p>定义SCENIC 程序之后，用 VERIFAI 来伪造场景，从分布中采样参数，在 LGSVL 模拟器中运行相应测试，并监视违反“安全”规范的情况。 一共生成1294 个测试用例，其中 2% 违反“安全”规范。 VERIFAI 的误差表存储所有此类情况的参数值，以及规范的定量满意度值；实验中将 VERIFAI 配置为存储安全运行，并且区分稳健安全的运行和几乎事故的运行。</p>
+<h3 id="3实验数据">3.实验数据</h3>
+<p>测试车是 林肯 MKZ 混合动力车，用**DataSpeed **线控功能和多个传感器进行增强，包括一个 <strong>Velodyne VLS-128 LiDAR</strong>、三个USB 摄像头和一个RTK  Novatel PwrPak7 双天线 GPS/IMU，保证 2 厘米的位置精度。 使用GPU GTX-1080TI的 x86 工控机，采用开源 Apollo 3.5自动驾驶软件进行测试。</p>
+<p>为了帮助track testing的实现，固定自驾车和行人的初始位置和方向，并将行人轨迹定义为具有 3 个参数的直线：delay-过马路的延迟时间、distance-犹豫前行走距离和time-犹豫的时间。</p>
+<p>如图是Satisfaction value，关于延迟delay和距离distance的函数：</p>
+<figure data-type="image" tabindex="3"><img src="https://zihan987.github.io/post-images/1629190663538.png" alt="" loading="lazy"></figure>
+<p>其中可以看到两个明显的聚类，左下方和右上方。为此选择了7个测试用例，两个失败（不安全），两个成功（安全）和3个中间（勉强安全）。</p>
+<p>在 GoMentum 执行 7 个测试用例，其参数如表所示。</p>
+<figure data-type="image" tabindex="4"><img src="https://zihan987.github.io/post-images/1629190675289.png" alt="" loading="lazy"></figure>
+<p>对每个测试场景进行了多次运行，总共获得了 23 次运行。</p>
+<figure data-type="image" tabindex="5"><img src="https://zihan987.github.io/post-images/1629190688683.png" alt="" loading="lazy"></figure>
+<p>橘黄色标注显示是违反“安全”的运行，而白色行满足“安全”。 突出显示行的颜色表示不安全行为的程度：红色代表碰撞，橙色代表在视觉上归类为接近碰撞，黄色表示违反“安全但不是接近碰撞” 。</p>
+<p>下图是是两个测试用例的轨迹：track test和5次再仿真，自驾车（绿色/蓝色）和行人（橙色和黄色）的轨迹</p>
+<figure data-type="image" tabindex="6"><img src="https://zihan987.github.io/post-images/1629190703503.png" alt="" loading="lazy"></figure>
+<p>模拟轨迹和真实轨迹显示重叠很多，但也存在差异：例如，尽管希望模拟的自驾车，从真实轨迹相同的位置开始，但阿波罗系统拒绝从该位置开始行驶，不得不对其进行略微调整。 更有趣的是，模拟的自驾车转弯比真实的更急，可能是模拟器对上坡驾驶的影响不精确建模造成。 最后，5 个模拟紧密聚集，但并不完全相同，这表明即使是单个测试用例也可以产生一系列不同的模拟轨迹。</p>
+<figure data-type="image" tabindex="7"><img src="https://zihan987.github.io/post-images/1629190712039.png" alt="" loading="lazy"></figure>
+<p>上表是是真实和重仿真轨迹之间的平均距离：<strong>Skorokhod metric</strong>测量两个定时轨迹的最坏情况偏差，可用于证明一致性，即<strong>Skorokhod metric</strong>显示的模拟轨迹与真实轨迹之间界限，允许从模拟到现实的迁移；<strong>Dynamic Time Warping (DTW) distance</strong>则给出整个轨迹而不是最坏点的平均相似性度量。</p>
+<h3 id="参考链接">参考链接</h3>
+<p>1.<a href="https://github.com/lgsvl/simulator">https://github.com/lgsvl/simulator</a></p>
+<p>2.<a href="https://www.bianchengquan.com/article/219836.html">https://www.bianchengquan.com/article/219836.html</a></p>
+<p>3.<a href="https://zhuanlan.zhihu.com/p/398051316">https://zhuanlan.zhihu.com/p/398051316</a></p>
+<p>4.<a href="https://arxiv.org/abs/2003.07739">https://arxiv.org/abs/2003.07739</a></p>
+<p>5.<a href="https://link.zhihu.com/?target=http%3A//bit.ly/GoM">https://link.zhihu.com/?target=http%3A//bit.ly/GoM</a></p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Raspberry Pico教程]]></title>
         <id>https://zihan987.github.io/post/raspberry-pico-jiao-cheng/</id>
@@ -1434,192 +1496,6 @@ int main() {
     # add url via pico_set_program_url
     example_auto_set_url(timer_lowlevel)
 endif ()
-</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[UART]]></title>
-        <id>https://zihan987.github.io/post/uart/</id>
-        <link href="https://zihan987.github.io/post/uart/">
-        </link>
-        <updated>2021-08-12T05:07:39.000Z</updated>
-        <summary type="html"><![CDATA[<p>USART是一个全双工通用同步/异步串行收发模块，该接口是一个高度灵活的串行通信设备。USART收发模块一般分为三大部分：<a href="https://baike.baidu.com/item/%E6%97%B6%E9%92%9F%E5%8F%91%E7%94%9F%E5%99%A8/9827742">时钟发生器</a>、数据发送器和接收器。控制<a href="https://baike.baidu.com/item/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>为所有的模块共享。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>USART是一个全双工通用同步/异步串行收发模块，该接口是一个高度灵活的串行通信设备。USART收发模块一般分为三大部分：<a href="https://baike.baidu.com/item/%E6%97%B6%E9%92%9F%E5%8F%91%E7%94%9F%E5%99%A8/9827742">时钟发生器</a>、数据发送器和接收器。控制<a href="https://baike.baidu.com/item/%E5%AF%84%E5%AD%98%E5%99%A8">寄存器</a>为所有的模块共享。</p>
-<!-- more -->
-<h3 id="micropython">MicroPython</h3>
-<table>
-<thead>
-<tr>
-<th>**Function</th>
-<th><strong>Default</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>UART_BAUDRATE</td>
-<td>115,200</td>
-</tr>
-<tr>
-<td>UART_BITS</td>
-<td>8</td>
-</tr>
-<tr>
-<td>UART_STOP</td>
-<td>1</td>
-</tr>
-<tr>
-<td>UART0_TX</td>
-<td>Pin 0</td>
-</tr>
-<tr>
-<td>UART0_RX</td>
-<td>Pin 1</td>
-</tr>
-<tr>
-<td>UART1_TX</td>
-<td>Pin 4</td>
-</tr>
-<tr>
-<td>UART1_RX</td>
-<td>Pin 5</td>
-</tr>
-</tbody>
-</table>
-<pre><code class="language-python">from machine import Pin
-from rp2 import PIO, StateMachine, asm_pio
-
-UART_BAUD = 115200
-PIN_BASE = 10
-NUM_UARTS = 8
-
-
-@asm_pio(sideset_init=PIO.OUT_HIGH, out_init=PIO.OUT_HIGH, out_shiftdir=PIO.SHIFT_RIGHT)
-def uart_tx():
-    # Block with TX deasserted until data available
-    pull()
-    # Initialise bit counter, assert start bit for 8 cycles
-    set(x, 7)  .side(0)       [7]
-    # Shift out 8 data bits, 8 execution cycles per bit
-    label(&quot;bitloop&quot;)
-    out(pins, 1)              [6]
-    jmp(x_dec, &quot;bitloop&quot;)
-    # Assert stop bit for 8 cycles total (incl 1 for pull())
-    nop()      .side(1)       [6]
-
-
-# Now we add 8 UART TXs, on pins 10 to 17. Use the same baud rate for all of them.
-uarts = []
-for i in range(NUM_UARTS):
-    sm = StateMachine(
-        i, uart_tx, freq=8 * UART_BAUD, sideset_base=Pin(PIN_BASE + i), out_base=Pin(PIN_BASE + i)
-    )
-    sm.active(1)
-    uarts.append(sm)
-
-# We can print characters from each UART by pushing them to the TX FIFO
-def pio_uart_print(sm, s):
-    for c in s:
-        sm.put(ord(c))
-
-
-# Print a different message from each UART
-for i, u in enumerate(uarts):
-    pio_uart_print(u, &quot;Hello from UART {}!\n&quot;.format(i))
-</code></pre>
-<h3 id="cc">C/C++</h3>
-<p>以下为测试demo：</p>
-<pre><code class="language-c">#include &quot;pico/stdlib.h&quot;
-#include &quot;hardware/uart.h&quot;
-#include &quot;hardware/irq.h&quot;
-
-
-/// \tag::uart_advanced[]
-
-#define UART_ID uart0
-#define BAUD_RATE 115200
-#define DATA_BITS 8
-#define STOP_BITS 1
-#define PARITY    UART_PARITY_NONE
-
-// We are using pins 0 and 1, but see the GPIO function select table in the
-// datasheet for information on which other pins can be used.
-#define UART_TX_PIN 0
-#define UART_RX_PIN 1
-
-static int chars_rxed = 0;
-
-// RX interrupt handler
-void on_uart_rx() {
-    while (uart_is_readable(UART_ID)) {
-        uint8_t ch = uart_getc(UART_ID);
-        // Can we send it back?
-        if (uart_is_writable(UART_ID)) {
-            // Change it slightly first!
-            ch++;
-            uart_putc(UART_ID, ch);
-        }
-        chars_rxed++;
-    }
-}
-
-int main() {
-    // Set up our UART with a basic baud rate.
-    uart_init(UART_ID, 2400);
-
-    // Set the TX and RX pins by using the function select on the GPIO
-    // Set datasheet for more information on function select
-    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-
-    // Actually, we want a different speed
-    // The call will return the actual baud rate selected, which will be as close as
-    // possible to that requested
-    int actual = uart_set_baudrate(UART_ID, BAUD_RATE);
-
-    // Set UART flow control CTS/RTS, we don't want these, so turn them off
-    uart_set_hw_flow(UART_ID, false, false);
-
-    // Set our data format
-    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
-
-    // Turn off FIFO's - we want to do this character by character
-    uart_set_fifo_enabled(UART_ID, false);
-
-    // Set up a RX interrupt
-    // We need to set up the handler first
-    // Select correct interrupt for the UART we are using
-    int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
-
-    // And set up and enable the interrupt handlers
-    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
-    irq_set_enabled(UART_IRQ, true);
-
-    // Now enable the UART to send interrupts - RX only
-    uart_set_irq_enables(UART_ID, true, false);
-
-    // OK, all set up.
-    // Lets send a basic string out, and then run a loop and wait for RX interrupts
-    // The handler will count them, but also reflect the incoming data back with a slight change!
-    uart_puts(UART_ID, &quot;\nHello, uart interrupts\n&quot;);
-
-    while (1)
-        tight_loop_contents();
-}
-</code></pre>
-<p>CMakeLists.txt:</p>
-<pre><code class="language-cmake">add_executable(uart_advanced
-        uart_advanced.c
-        )
-
-# Pull in our pico_stdlib which pulls in commonly used features
-target_link_libraries(uart_advanced pico_stdlib hardware_uart)
-
-# create map/bin/hex file etc.
-pico_add_extra_outputs(uart_advanced)
-
-# add url via pico_set_program_url
-example_auto_set_url(uart_advanced)
 </code></pre>
 ]]></content>
     </entry>
