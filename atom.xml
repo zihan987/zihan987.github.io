@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zihan987.github.io</id>
     <title>阿chai带你学AI</title>
-    <updated>2021-08-17T08:59:34.831Z</updated>
+    <updated>2021-08-18T16:02:55.551Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://zihan987.github.io"/>
     <link rel="self" href="https://zihan987.github.io/atom.xml"/>
@@ -10,6 +10,80 @@
     <logo>https://zihan987.github.io/images/avatar.png</logo>
     <icon>https://zihan987.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 阿chai带你学AI</rights>
+    <entry>
+        <title type="html"><![CDATA[算法工程师惨遭毒虫叮咬，感染了！]]></title>
+        <id>https://zihan987.github.io/post/suan-fa-gong-cheng-shi-can-zao-du-chong-ding-yao-gan-ran-liao/</id>
+        <link href="https://zihan987.github.io/post/suan-fa-gong-cheng-shi-can-zao-du-chong-ding-yao-gan-ran-liao/">
+        </link>
+        <updated>2021-08-18T15:58:05.000Z</updated>
+        <summary type="html"><![CDATA[<p>阿chai昨天被一个毒虫子咬了。原本只是红肿，后来变成了出“脓”了，而且是一大片。在经历了一系列检查后医生给阿chai开了很多药，内服外敷的都有，还有激素成分的药物。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>阿chai昨天被一个毒虫子咬了。原本只是红肿，后来变成了出“脓”了，而且是一大片。在经历了一系列检查后医生给阿chai开了很多药，内服外敷的都有，还有激素成分的药物。</p>
+<!-- more -->
+<figure data-type="image" tabindex="1"><img src="https://zihan987.github.io/post-images/1629302334603.png" alt="" loading="lazy"></figure>
+<p>阿chai在这里提醒小伙伴们，最近真的少往草和树多的地方去，秋天就算是蚊子咬人都很厉害的。既然虫子这么讨厌，那今天来个昆虫识别的demo吧，机器人得“吸取”阿chai的教训，不能被啃啊。</p>
+<h3 id="1蜘蛛侠也被咬了">1.蜘蛛侠也被咬了</h3>
+<p>呃呃呃，蜘蛛侠是蜘蛛侠，阿chai是阿chai，蜘蛛侠能在绿布前表演，阿chai能电脑前码字，认真就输了。</p>
+<figure data-type="image" tabindex="2"><img src="https://zihan987.github.io/post-images/1629302397777.jpeg" alt="" loading="lazy"></figure>
+<p>小伙伴们，被蛇虫咬了一定要去医院，真的，别拖，去了天堂也变不成蜘蛛侠。</p>
+<h3 id="2faster-rcnn">2.Faster-RCNN</h3>
+<p>Faster-RCNN是非常优秀的目标检测框架，是Fast RCNN的优化版本，二者主要的不同在于感兴趣区域的生成方法，Fast RCNN使用的是选择性搜索，而Faster RCNN用的是RPN网络。RPN将图像特征映射作为输入，生成一系列object proposals，每个都带有相应的分数。</p>
+<h4 id="a开源demo与paper">a.开源demo与paper</h4>
+<pre><code class="language-markdown">Paper:https://www.aliyundrive.com/s/fr12aE6n46E
+Caffe:https://github.com/rbgirshick/py-faster-rcnn.git
+PyTorch:https://github.com/jwyang/faster-rcnn.pytorch.git
+TensorFlow:https://github.com/smallcorgi/Faster-RCNN_TF.git
+Keras:https://github.com/you359/Keras-FasterRCNN.git
+</code></pre>
+<h4 id="b工作流程">b.工作流程</h4>
+<p>（1）输入图像到卷积网络中，生成该图像的特征映射。</p>
+<p>（2）在特征映射上应用RPN，返回object proposals和对应的分数。</p>
+<p>（3）应用Rol池化层，将所有proposals修正到同样尺寸。</p>
+<p>（4）将proposals传递到完全连接层，生成目标物体的边界框。</p>
+<figure data-type="image" tabindex="3"><img src="https://zihan987.github.io/post-images/1629302414325.png" alt="" loading="lazy"></figure>
+<h4 id="c工作点">c.工作点</h4>
+<ul>
+<li>卷基层：Faster RCNN使用一组基础的conv+relu+pooling层提取image的feature maps。该feature maps被共享用于后续RPN层和全连接层。</li>
+<li>RPN：RPN用于生成region proposals。该层通过softmax判断anchors属于positive或者negative，再利用bounding box regression修正anchors获得精确的proposals。</li>
+<li>Roi Pooling：该层收集输入的feature maps和proposals，综合这些信息后提取proposal feature maps，送入后续全连接层判定目标类别。</li>
+<li>分类器：利用proposal feature maps计算proposal的类别，同时再次bounding box regression获得检测框最终的精确位置。</li>
+</ul>
+<h3 id="3faster-rcnn的昆虫检测">3.Faster-RCNN的昆虫检测</h3>
+<p>这里我们依托百度飞桨的PaddleX，小伙伴们也可以在AIStudio上运行。</p>
+<h4 id="a环境准备">a.环境准备</h4>
+<p>在安装好Miniconda或Anaconda后我们新建一个环境：</p>
+<pre><code class="language-bash"># 新建环境
+conda create -n insect_detection python=3.7
+conda activate insect_detection
+# paddlepaddle 1.8.4
+pip install paddlepaddle-gpu=1.8.4
+# 静态图
+pip install &quot;paddlex&lt;=2.0.0&quot; -i https://mirror.baidu.com/pypi/simple
+
+tar xzf insect_det.tar.gz
+</code></pre>
+<p>然后下载阿chai准备的代码、数据以及模型文件：</p>
+<pre><code class="language-bash">git clone https://github.com/zihan987/insects_detection.git
+</code></pre>
+<pre><code>https://pan.baidu.com/s/1VuURAeh610r-gQRO8ROBxg
+提取码：fp5n
+</code></pre>
+<p>insect文件解压后，fasterrcnn_model.zip为阿chai训练的模型，insect_det.tar.gz为标注好的昆虫数据。</p>
+<h4 id="b训练模型">b.训练模型</h4>
+<p>如果想自己训练，阿chai提供了训练的代码，在<a href="https://github.com/zihan987/insects_detection/blob/main/train.py">train.py</a>中。我们运行即可进行测试，注意修改数据的路径。</p>
+<pre><code class="language-bash">python train.py
+</code></pre>
+<p>训练一定找一个GPU服务器，或者在AIStudio上运行。</p>
+<figure data-type="image" tabindex="4"><img src="https://zihan987.github.io/post-images/1629302428871.png" alt="" loading="lazy"></figure>
+<p>阿chai只是训练了20个epoch，小伙伴们可以增加训练轮数。</p>
+<h4 id="c测试效果">c.测试效果</h4>
+<p>阿柴提供了训练的代码，在<a href="https://github.com/zihan987/insects_detection/blob/main/test.py">test.py</a>中，我们可以运行进行测试。</p>
+<pre><code class="language-bash">python test.py
+</code></pre>
+<p>在保存的文件夹中可找到效果图片。</p>
+<figure data-type="image" tabindex="5"><img src="https://zihan987.github.io/post-images/1629302452858.jpg" alt="" loading="lazy"></figure>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[论文分享：基于场景的自动驾驶汽车自动化安全测试的方法]]></title>
         <id>https://zihan987.github.io/post/lun-wen-fen-xiang-ji-yu-chang-jing-de-zi-dong-jia-shi-qi-che-zi-dong-hua-an-quan-ce-shi-de-fang-fa/</id>
@@ -1291,211 +1365,6 @@ pico_add_extra_outputs(lcd_1602_i2c)
 
 # add url via pico_set_program_url
 example_auto_set_url(lcd_1602_i2c)
-</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[中断、定时器]]></title>
-        <id>https://zihan987.github.io/post/zhong-duan-ding-shi-qi/</id>
-        <link href="https://zihan987.github.io/post/zhong-duan-ding-shi-qi/">
-        </link>
-        <updated>2021-08-12T05:09:23.000Z</updated>
-        <summary type="html"><![CDATA[<p>中断和定时器是CPU必不可少的部分，详细的介绍这里不过多赘述，我们直接看一下代码。定时器的代码主要结合C去讲解，这样比较清楚。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>中断和定时器是CPU必不可少的部分，详细的介绍这里不过多赘述，我们直接看一下代码。定时器的代码主要结合C去讲解，这样比较清楚。</p>
-<!-- more -->
-<h3 id="micropython">MicroPython</h3>
-<p>中断</p>
-<pre><code class="language-python">from machine import Pin
-
-p2 = Pin(2, Pin.IN, Pin.PULL_UP)
-p2.irq(lambda pin: print(&quot;IRQ with flags:&quot;, pin.irq().flags()),
-Pin.IRQ_FALLING)
-</code></pre>
-<h3 id="cc">C/C++</h3>
-<p>定时器功能也很基础,而且只有一个,主要功能如下:</p>
-<ul>
-<li>64位计数器 (频率固定1MHz,所以要好几千年才能溢出)</li>
-<li>4个闹钟 (闹钟是只匹配低32B,最大间隔4295秒)</li>
-<li>寄存器自带映射,所以多个处理器同时访问也不用考虑竞争问题(无需考虑竞争问题)</li>
-</ul>
-<p>其中ALARM功能只会发起一次中断,中断发生后就会清除ARMED位,所有函数都有他的毫秒版本和微秒版本。</p>
-<pre><code class="language-C">#include &lt;stdio.h&gt;
-#include &quot;pico/stdlib.h&quot;
-#include &quot;pico/util/queue.h&quot;
-
-bool timer_callback(repeating_timer_t *rt);
-
-queue_t sample_fifo;
-
-// using struct as an example, but primitive types can be used too
-typedef struct element {
-    uint value;
-} element_t;
-
-const int FIFO_LENGTH = 32;
-
-int main() {
-    stdio_init_all();
-
-    int hz = 25;
-
-    queue_init(&amp;sample_fifo, sizeof(element_t), FIFO_LENGTH);
-
-    repeating_timer_t timer;
-
-    // negative timeout means exact delay (rather than delay between callbacks)
-    if (!add_repeating_timer_us(-1000000 / hz, timer_callback, NULL, &amp;timer)) {
-        printf(&quot;Failed to add timer\n&quot;);
-        return 1;
-    }
-
-    // read some blocking
-
-    for (int i = 0; i &lt; 10; i++) {
-        element_t element;
-        queue_remove_blocking(&amp;sample_fifo, &amp;element);
-        printf(&quot;Got %d: %d\n&quot;, i, element.value);
-    }
-
-    // now retrieve all that are available periodically (simulate polling)
-    for (int i = 0; i &lt; 10; i++) {
-        int count = queue_get_level(&amp;sample_fifo);
-        if (count) {
-            printf(&quot;Getting %d, %d:\n&quot;, i, count);
-            for (; count &gt; 0; count--) {
-                element_t element;
-                queue_remove_blocking(&amp;sample_fifo, &amp;element);
-                printf(&quot;  got %d\n&quot;, element.value);
-            }
-        }
-        sleep_us(5000000 / hz); // sleep for 5 times the sampling period
-    }
-
-    cancel_repeating_timer(&amp;timer);
-
-    // drain any remaining
-    element_t element;
-    while (queue_try_remove(&amp;sample_fifo, &amp;element)) {
-        printf(&quot;Got remaining %d\n&quot;, element.value);
-    }
-
-    queue_free(&amp;sample_fifo);
-    printf(&quot;Done\n&quot;);
-}
-
-bool timer_callback(repeating_timer_t *rt) {
-    static int v = 100;
-    element_t element = {
-            .value = v
-    };
-    v += 100;
-
-    if (!queue_try_add(&amp;sample_fifo, &amp;element)) {
-        printf(&quot;FIFO was full\n&quot;);
-    }
-    return true; // keep repeating
-}
-</code></pre>
-<p>CMakeLists.txt:</p>
-<pre><code class="language-cmake">if (NOT PICO_TIME_NO_ALARM_SUPPORT)
-    add_executable(periodic_sampler
-            periodic_sampler.c
-            )
-
-    # Pull in our (to be renamed) simple get you started dependencies
-    target_link_libraries(periodic_sampler pico_stdlib)
-
-    # create map/bin/hex file etc.
-    pico_add_extra_outputs(periodic_sampler)
-
-    # add url via pico_set_program_url
-    example_auto_set_url(periodic_sampler)
-endif()
-</code></pre>
-<p>lowlevel:</p>
-<pre><code class="language-c">#include &lt;stdio.h&gt;
-#include &quot;pico/stdlib.h&quot;
-#include &quot;hardware/timer.h&quot;
-#include &quot;hardware/irq.h&quot;
-
-/// \tag::get_time[]
-// Simplest form of getting 64 bit time from the timer.
-// It isn't safe when called from 2 cores because of the latching
-// so isn't implemented this way in the sdk
-static uint64_t get_time(void) {
-    // Reading low latches the high value
-    uint32_t lo = timer_hw-&gt;timelr;
-    uint32_t hi = timer_hw-&gt;timehr;
-    return ((uint64_t) hi &lt;&lt; 32u) | lo;
-}
-/// \end::get_time[]
-
-/// \tag::alarm_standalone[]
-// Use alarm 0
-#define ALARM_NUM 0
-#define ALARM_IRQ TIMER_IRQ_0
-
-// Alarm interrupt handler
-static volatile bool alarm_fired;
-
-static void alarm_irq(void) {
-    // Clear the alarm irq
-    hw_clear_bits(&amp;timer_hw-&gt;intr, 1u &lt;&lt; ALARM_NUM);
-
-    // Assume alarm 0 has fired
-    printf(&quot;Alarm IRQ fired\n&quot;);
-    alarm_fired = true;
-}
-
-static void alarm_in_us(uint32_t delay_us) {
-    // Enable the interrupt for our alarm (the timer outputs 4 alarm irqs)
-    hw_set_bits(&amp;timer_hw-&gt;inte, 1u &lt;&lt; ALARM_NUM);
-    // Set irq handler for alarm irq
-    irq_set_exclusive_handler(ALARM_IRQ, alarm_irq);
-    // Enable the alarm irq
-    irq_set_enabled(ALARM_IRQ, true);
-    // Enable interrupt in block and at processor
-
-    // Alarm is only 32 bits so if trying to delay more
-    // than that need to be careful and keep track of the upper
-    // bits
-    uint64_t target = timer_hw-&gt;timerawl + delay_us;
-
-    // Write the lower 32 bits of the target time to the alarm which
-    // will arm it
-    timer_hw-&gt;alarm[ALARM_NUM] = (uint32_t) target;
-}
-
-int main() {
-    stdio_init_all();
-    printf(&quot;Timer lowlevel!\n&quot;);
-
-    // Set alarm every 2 seconds
-    while (1) {
-        alarm_fired = false;
-        alarm_in_us(1000000 * 2);
-        // Wait for alarm to fire
-        while (!alarm_fired);
-    }
-}
-</code></pre>
-<p>CMakeLists.txt:</p>
-<pre><code class="language-cmake">if (PICO_ON_DEVICE)
-    add_executable(timer_lowlevel
-            timer_lowlevel.c)
-
-    # Disable SDK alarm support for this lowlevel example
-    set(PICO_TIME_DEFAULT_ALARM_POOL_DISABLED 1)
-
-    target_link_libraries(timer_lowlevel pico_stdlib)
-
-    # create map/bin/hex file etc.
-    pico_add_extra_outputs(timer_lowlevel)
-
-    # add url via pico_set_program_url
-    example_auto_set_url(timer_lowlevel)
-endif ()
 </code></pre>
 ]]></content>
     </entry>
